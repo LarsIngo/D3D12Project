@@ -179,8 +179,8 @@
     <ClInclude Include="Scene\Scene.hpp" />
     <ClInclude Include="Tools\CPUTimer.hpp" />
     <ClInclude Include="Tools\D3D12Timer.hpp" />
-    <ClInclude Include="Tools\DxAssert.hpp" />
-    <ClInclude Include="Tools\DxHelp.hpp" />
+    <ClInclude Include="Tools\D3D12Tools.hpp" />
+    <ClInclude Include="Tools\d3dx12.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

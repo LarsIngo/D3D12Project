@@ -1,9 +1,9 @@
 #include "ParticleSystem.hpp"
 #include "../D3D12/D3D12Renderer.hpp"
-#include "../Scene/Scene.hpp"
 #include "../D3D12/FrameBuffer.hpp"
-#include "../Tools/DxHelp.hpp"
 #include "../D3D12/StorageSwapBuffer.hpp"
+#include "../Tools/D3D12Tools.hpp"
+#include "../Scene/Scene.hpp"
 #include "../Camera/Camera.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 

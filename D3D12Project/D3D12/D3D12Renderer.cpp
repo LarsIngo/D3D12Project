@@ -1,5 +1,6 @@
 #include "D3D12Renderer.hpp"
-#include "../Tools/DxAssert.hpp"
+#include "../Tools/D3D12Tools.hpp"
+#include "../Tools/d3dx12.hpp"
 #include "FrameBuffer.hpp"
 
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -14,7 +15,7 @@ D3D12Renderer::D3D12Renderer(unsigned int winWidth, unsigned int winHeight)
     // Window.
     InitialiseGLFW();
 
-    // D3D11.
+    // D3D12.
     InitialiseD3D12();
 }
 
@@ -42,7 +43,7 @@ void D3D12Renderer::Close()
 void D3D12Renderer::Present(FrameBuffer* frameBuffer)
 {
     mWinFrameBuffer->Copy(frameBuffer);
-    //mSwapChain->Present(0, 0);
+    mSwapChain->Present(0, 0);
 }
 
 void D3D12Renderer::InitialiseGLFW()
@@ -73,6 +74,87 @@ void D3D12Renderer::DeInitialiseGLFW()
 void D3D12Renderer::InitialiseD3D12()
 {
     assert(mGLFWwindow != NULL);
+
+    IDXGIFactory5* dxgiFactory;
+    ASSERT(CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory)), S_OK);
+
+    IDXGIAdapter1* adapter;
+    int adapterIndex = 0;
+    bool adapterFound = false;
+    while (dxgiFactory->EnumAdapters1(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND)
+    {
+        DXGI_ADAPTER_DESC1 desc;
+        adapter->GetDesc1(&desc);
+        if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+        {
+            ++adapterIndex;
+            continue;
+        }
+        HRESULT hr = D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_0, _uuidof(ID3D12Device), nullptr);
+        if (SUCCEEDED(hr))
+        {
+            adapterFound = true;
+            break;
+        }
+        ++adapterIndex;
+    }
+    ASSERT(adapterFound, true);
+
+    ASSERT(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice)), S_OK);
+
+
+    D3D12_COMMAND_QUEUE_DESC commandQueueDesc;
+    commandQueueDesc.Priority = 0;
+    commandQueueDesc.NodeMask = 0;
+    commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+    commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+    ASSERT(mDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&mCommandQueue)), S_OK);
+
+
+    DXGI_MODE_DESC backBufferDesc;
+    backBufferDesc.Width = mWinWidth;
+    backBufferDesc.Height = mWinHeight;
+    backBufferDesc.RefreshRate.Numerator = 0;
+    backBufferDesc.RefreshRate.Denominator = 0;
+    backBufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    backBufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+    backBufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+
+    DXGI_SAMPLE_DESC sampleDesc;
+    sampleDesc.Count = 1;
+    sampleDesc.Quality = 0;
+
+    DXGI_SWAP_CHAIN_DESC swapChainDesc;
+    swapChainDesc.BufferDesc = backBufferDesc;
+    swapChainDesc.SampleDesc = sampleDesc;
+    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.BufferCount = mSwapChainBufferCount;
+    swapChainDesc.OutputWindow = glfwGetWin32Window(mGLFWwindow);
+    swapChainDesc.Windowed = TRUE;
+    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+    swapChainDesc.Flags = 0;
+
+    IDXGISwapChain* tmpSwapChain;
+    ASSERT(dxgiFactory->CreateSwapChain(mCommandQueue, &swapChainDesc, &tmpSwapChain), S_OK);
+    mSwapChain = static_cast<IDXGISwapChain4*>(tmpSwapChain);
+
+    //mActiveSwapchainBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
+
+    D3D12_DESCRIPTOR_HEAP_DESC backBufferRTVHeapDesc;
+    backBufferRTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+    backBufferRTVHeapDesc.NumDescriptors = mSwapChainBufferCount;
+    backBufferRTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    backBufferRTVHeapDesc.NodeMask = 0;
+    ASSERT(mDevice->CreateDescriptorHeap(&backBufferRTVHeapDesc, IID_PPV_ARGS(&mSwapChainDescriptorHeap)), S_OK);
+    mRTVDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mSwapChainDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+    for (unsigned int i = 0; i < mSwapChainBufferCount; ++i)
+    {
+        ASSERT(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainRenderTargets[i])), S_OK);
+        mDevice->CreateRenderTargetView(mSwapChainRenderTargets[i], nullptr, rtvHandle);
+        rtvHandle.Offset(1, mRTVDescriptorSize);
+    }
 
 //    // We initiate the device, device context and swap chain.
 //    DXGI_SWAP_CHAIN_DESC scDesc;

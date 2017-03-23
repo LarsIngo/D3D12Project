@@ -1,5 +1,5 @@
 #include "StorageBuffer.hpp"
-#include "../Tools/DxAssert.hpp"
+#include "../Tools/D3D12Tools.hpp"
 
 StorageBuffer::StorageBuffer(/*ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, unsigned int totalSize, unsigned int stride, UINT bindFlags*/)
 {

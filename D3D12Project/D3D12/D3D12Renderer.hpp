@@ -35,6 +35,9 @@ class D3D12Renderer
         // D3D12 device.
         ID3D12Device* mDevice;
 
+        // Command queue.
+        ID3D12CommandQueue* mCommandQueue;
+
         // GLFW window.
         GLFWwindow* mGLFWwindow;
     private:
@@ -49,7 +52,13 @@ class D3D12Renderer
         bool mClose;
 
         //D3D12
-        //IDXGISwapChain* mSwapChain;
+        IDXGISwapChain4* mSwapChain;
+        ID3D12DescriptorHeap* mSwapChainDescriptorHeap;
+        unsigned int mActiveSwapchainBufferIndex;
+        static const unsigned int mSwapChainBufferCount = 3;
+        ID3D12Resource* mSwapChainRenderTargets[mSwapChainBufferCount];
+        unsigned int mRTVDescriptorSize;
+
         FrameBuffer* mWinFrameBuffer;
         //ID3D11SamplerState* mSamplerState;
         //ID3D11RasterizerState* mRasterizerState;
