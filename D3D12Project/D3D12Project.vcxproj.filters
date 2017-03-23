@@ -80,8 +80,5 @@
     <ClInclude Include="Tools\D3D12Tools.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Tools\d3dx12.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

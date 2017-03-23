@@ -1,29 +1,31 @@
 #pragma once
 
 #include <d3d12.h>
+#include <d3dx12.h>
 #include <glm/glm.hpp>
 
 class FrameBuffer
 {
     public:
         // Constructor.
-        // pDevice Pointer to D3D11 device.
-        // pDeviceContext Pointer to D3D11 device context.
-        // width Width in pixels.
-        // height Height in pixels.
-        // bindFlags Bind flags. DEFAULT [D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET | D3D11_BIND_UNORDERED_ACCESS]
-		// miscFlags Misc flags. DEFAULT [0]
-        // initTexture Initialised texture. DEFAULT [nullptr]
-        FrameBuffer(/*ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, unsigned int width, unsigned int height, UINT bindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET | D3D11_BIND_UNORDERED_ACCESS, UINT miscFlags = 0, ID3D11Texture2D* initTexture = nullptr*/);
+        // pDevice Pointer to D3D12 device.
+        FrameBuffer(ID3D12Device* pDevice, CD3DX12_CPU_DESCRIPTOR_HANDLE* pResourceHandle);
+
+        FrameBuffer(ID3D12Device* pDevice, ID3D12Resource* pResouce);
 
         // Destructor.
         ~FrameBuffer();
 
         // Clear textures.
-        void Clear(float r = 0.f, float g = 0.f, float b = 0.f, float a = 0.f, float depth = 1.f);
+        void Clear(const ID3D12CommandList& commandList, float r = 0.f, float g = 0.f, float b = 0.f, float a = 0.f, float depth = 1.f);
 
 		// Copy other frame buffer.
-		void Copy(FrameBuffer* fb);
+		void Copy(const ID3D12CommandList& commandList, FrameBuffer* fb);
+
+        // Transition image layout.
+        // commandbuffer Command buffer to make transition
+        // newLayout Layout to transition to.
+        void TransitionImageLayout(const ID3D12CommandList& commandList/*, VkImageLayout newLayout*/);
 
         // Frame buffer width in pixels.
         unsigned int mWidth;
@@ -43,6 +45,7 @@ class FrameBuffer
         //ID3D11DepthStencilView* mDepthStencilDSV;
 
     private:
-        //ID3D11Device* mpDevice;
-        //ID3D11DeviceContext* mpDeviceContext;
+        ID3D12Device* mpDevice;
+        ID3D12Resource* mResource;
+        bool mMyResource;
 };

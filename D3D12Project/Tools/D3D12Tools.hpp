@@ -2,6 +2,7 @@
 
 #include <d3d12.h>
 #include <d3dcompiler.h>
+//#include <d3dx12.h>
 #include <string>
 #include <vector>
 
@@ -24,20 +25,20 @@
 #endif // WIN32
 #endif // NDEBUG
 
-#define SAFE_RELEASE SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }
+#define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = NULL; } }
 
 namespace D3D12Tools
 {
-//    // Creates buffer.
-//    // device D3D11 device.
-//    // usage Buffer useage flag.
-//    // bindFlags Buffer bind flags.
-//    // cpuAccessFlags Buffer CPU access flags.
-//    // buffer The buffer.
-//    // initData Pointer to initial data.
-//    // numOfElements Maximum number of elements (size of buffer equals sizeOf(T) * numOfElements).
-//    template <typename T>
-//    void CreateBuffer(ID3D11Device* device, D3D11_USAGE usage, UINT bindFlags, UINT cpuAccessFlags, ID3D11Buffer** buffer, T* initData = nullptr, unsigned int numOfElements = 0);
+    // Creates buffer.
+    // device D3D11 device.
+    // usage Buffer useage flag.
+    // bindFlags Buffer bind flags.
+    // cpuAccessFlags Buffer CPU access flags.
+    // buffer The buffer.
+    // initData Pointer to initial data.
+    // numOfElements Maximum number of elements (size of buffer equals sizeOf(T) * numOfElements).
+    //template <typename T>
+    //void CreateBuffer(ID3D11Device* device, D3D11_USAGE usage, UINT bindFlags, UINT cpuAccessFlags, ID3D11Buffer** buffer, T* initData = nullptr, unsigned int numOfElements = 0);
 //
 //    // Creates source stuctured buffer (CPU write, GPU read).
 //    // device D3D11 device.

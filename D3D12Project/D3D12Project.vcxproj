@@ -72,25 +72,25 @@
     <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediate\$(Platform)\$(Configuration)\</IntDir>
     <LibraryPath>$(SolutionDir)externals\Windows Kits\10\Lib\10.0.14393.0\um\x86;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)externals\glm\include;$(SolutionDir)externals\glfw\include;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\shared;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\um;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)externals\D3DX12;$(SolutionDir)externals\glm\include;$(SolutionDir)externals\glfw\include;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\shared;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\um;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediate\$(Platform)\$(Configuration)\</IntDir>
     <LibraryPath>$(SolutionDir)externals\Windows Kits\10\Lib\10.0.14393.0\um\x64;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)externals\glm\include;$(SolutionDir)externals\glfw\include;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\shared;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\um;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)externals\D3DX12;$(SolutionDir)externals\glm\include;$(SolutionDir)externals\glfw\include;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\shared;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\um;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediate\$(Platform)\$(Configuration)\</IntDir>
     <LibraryPath>$(SolutionDir)externals\Windows Kits\10\Lib\10.0.14393.0\um\x86;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)externals\glm\include;$(SolutionDir)externals\glfw\include;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\shared;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\um;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)externals\D3DX12;$(SolutionDir)externals\glm\include;$(SolutionDir)externals\glfw\include;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\shared;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\um;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediate\$(Platform)\$(Configuration)\</IntDir>
     <LibraryPath>$(SolutionDir)externals\Windows Kits\10\Lib\10.0.14393.0\um\x64;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)externals\glm\include;$(SolutionDir)externals\glfw\include;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\shared;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\um;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)externals\D3DX12;$(SolutionDir)externals\glm\include;$(SolutionDir)externals\glfw\include;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\shared;$(SolutionDir)externals\Windows Kits\10\Include\10.0.14393.0\um;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -180,7 +180,6 @@
     <ClInclude Include="Tools\CPUTimer.hpp" />
     <ClInclude Include="Tools\D3D12Timer.hpp" />
     <ClInclude Include="Tools\D3D12Tools.hpp" />
-    <ClInclude Include="Tools\d3dx12.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

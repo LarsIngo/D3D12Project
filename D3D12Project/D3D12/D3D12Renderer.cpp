@@ -1,7 +1,7 @@
 #include "D3D12Renderer.hpp"
 #include "../Tools/D3D12Tools.hpp"
-#include "../Tools/d3dx12.hpp"
 #include "FrameBuffer.hpp"
+#include <d3dx12.h>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
@@ -40,9 +40,17 @@ void D3D12Renderer::Close()
     mClose = true;
 }
 
-void D3D12Renderer::Present(FrameBuffer* frameBuffer)
+FrameBuffer* D3D12Renderer::SwapBackBuffer()
 {
-    mWinFrameBuffer->Copy(frameBuffer);
+    mActiveSwapchainBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
+    assert(mActiveSwapchainBufferIndex <= mSwapChainFrameBufferList.size());
+
+    return mSwapChainFrameBufferList[mActiveSwapchainBufferIndex];
+}
+
+
+void D3D12Renderer::PresentBackBuffer()
+{
     mSwapChain->Present(0, 0);
 }
 
@@ -78,6 +86,13 @@ void D3D12Renderer::InitialiseD3D12()
     IDXGIFactory5* dxgiFactory;
     ASSERT(CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory)), S_OK);
 
+#ifdef BUILD_ENABLE_D3D12_DEBUG
+    ID3D12Debug* debugInterface;
+    ASSERT(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)), S_OK);
+    debugInterface->EnableDebugLayer();
+    debugInterface->Release();
+#endif
+
     IDXGIAdapter1* adapter;
     int adapterIndex = 0;
     bool adapterFound = false;
@@ -90,7 +105,7 @@ void D3D12Renderer::InitialiseD3D12()
             ++adapterIndex;
             continue;
         }
-        HRESULT hr = D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_0, _uuidof(ID3D12Device), nullptr);
+        HRESULT hr = D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_0, __uuidof(ID3D12Device), nullptr);
         if (SUCCEEDED(hr))
         {
             adapterFound = true;
@@ -111,6 +126,16 @@ void D3D12Renderer::InitialiseD3D12()
     ASSERT(mDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&mCommandQueue)), S_OK);
 
 
+    D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc;
+    descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+    descriptorHeapDesc.NumDescriptors = 10;
+    descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    descriptorHeapDesc.NodeMask = 0;
+    ASSERT(mDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&mDescriptorHeap)), S_OK);
+
+    mResouceHandle = new CD3DX12_CPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
+
     DXGI_MODE_DESC backBufferDesc;
     backBufferDesc.Width = mWinWidth;
     backBufferDesc.Height = mWinHeight;
@@ -124,11 +149,14 @@ void D3D12Renderer::InitialiseD3D12()
     sampleDesc.Count = 1;
     sampleDesc.Quality = 0;
 
+    const std::size_t swapChainBufferCount = 3;
+    mSwapChainFrameBufferList.resize(swapChainBufferCount);
+
     DXGI_SWAP_CHAIN_DESC swapChainDesc;
     swapChainDesc.BufferDesc = backBufferDesc;
     swapChainDesc.SampleDesc = sampleDesc;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapChainDesc.BufferCount = mSwapChainBufferCount;
+    swapChainDesc.BufferCount = swapChainBufferCount;
     swapChainDesc.OutputWindow = glfwGetWin32Window(mGLFWwindow);
     swapChainDesc.Windowed = TRUE;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
@@ -138,123 +166,35 @@ void D3D12Renderer::InitialiseD3D12()
     ASSERT(dxgiFactory->CreateSwapChain(mCommandQueue, &swapChainDesc, &tmpSwapChain), S_OK);
     mSwapChain = static_cast<IDXGISwapChain4*>(tmpSwapChain);
 
-    //mActiveSwapchainBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
-
-    D3D12_DESCRIPTOR_HEAP_DESC backBufferRTVHeapDesc;
-    backBufferRTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-    backBufferRTVHeapDesc.NumDescriptors = mSwapChainBufferCount;
-    backBufferRTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-    backBufferRTVHeapDesc.NodeMask = 0;
-    ASSERT(mDevice->CreateDescriptorHeap(&backBufferRTVHeapDesc, IID_PPV_ARGS(&mSwapChainDescriptorHeap)), S_OK);
-    mRTVDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mSwapChainDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-    for (unsigned int i = 0; i < mSwapChainBufferCount; ++i)
+    for (std::size_t i = 0; i < mSwapChainFrameBufferList.size(); ++i)
     {
-        ASSERT(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainRenderTargets[i])), S_OK);
-        mDevice->CreateRenderTargetView(mSwapChainRenderTargets[i], nullptr, rtvHandle);
-        rtvHandle.Offset(1, mRTVDescriptorSize);
+        ID3D12Resource* resource;
+        mSwapChain->GetBuffer(i, __uuidof(ID3D12Resource), reinterpret_cast<void**>(&resource));
+        mSwapChainFrameBufferList[i] = new FrameBuffer(mDevice, mResouceHandle, mWinWidth, mWinHeight, resource);
     }
+        
 
-//    // We initiate the device, device context and swap chain.
-//    DXGI_SWAP_CHAIN_DESC scDesc;
-//    scDesc.BufferDesc.Width = mWinWidth; 		// Using the window's size avoids weird effects. If 0 the window's client width is used.
-//    scDesc.BufferDesc.Height = mWinHeight;		// Using the window's size avoids weird effects. If 0 the window's client height is used.
-//    scDesc.BufferDesc.RefreshRate.Numerator = 0;	// Screen refresh rate as RationalNumber. Zeroing it out makes DXGI calculate it.
-//    scDesc.BufferDesc.RefreshRate.Denominator = 0;	// Screen refresh rate as RationalNumber. Zeroing it out makes DXGI calculate it.
-//    scDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;						// The most common format. Variations include [...]UNORM_SRGB.
-//    scDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;	// The order pixel rows are drawn to the back buffer doesn't matter.
-//    scDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;					// Since the back buffer and window sizes matches, scaling doesn't matter.
-//    scDesc.SampleDesc.Count = 1;												// Disable multisampling.
-//    scDesc.SampleDesc.Quality = 0;												// Disable multisampling.
-//    scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;   // The back buffer will be rendered to.
-//    scDesc.BufferCount = 1;							        // We only have one back buffer.
-//    scDesc.OutputWindow = glfwGetWin32Window(mGLFWwindow);	    // Must point to the handle for the window used for rendering.
-//    scDesc.Windowed = true;					                // Run in windowed mode.
-//    scDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;	        // This makes the display driver select the most efficient technique.
-//    scDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;  // Alt-enter fullscreen.
-//
-//    UINT createDeviceFlags = D3D11_CREATE_DEVICE_SINGLETHREADED | D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-//#ifdef BUILD_ENABLE_D3D11_DEBUG
-//    createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
-//#endif
-//    DxAssert(D3D11CreateDeviceAndSwapChain(
-//        nullptr,					// Use the default adapter.
-//        D3D_DRIVER_TYPE_HARDWARE,	// Use the graphics card for rendering. Other options include software emulation.
-//        NULL,						// NULL since we don't use software emulation.
-//        createDeviceFlags,	// Dbg creation flags.
-//        nullptr,					// Array of feature levels to try using. With null the following are used 11.0, 10.1, 10.0, 9.3, 9.2, 9.1.
-//        0,							// The array above has 0 elements.
-//        D3D11_SDK_VERSION,			// Always use this.
-//        &scDesc,					// Description of the swap chain.
-//        &mSwapChain,				// [out] The created swap chain.
-//        &mDevice,					// [out] The created device.
-//        nullptr,					// [out] The highest supported feature level (from array).
-//        &mDeviceContext				// [out] The created device context.
-//    ), S_OK);
-//
-//    // Window frame buffer.
-//    ID3D11Texture2D* backBufferTex;
-//    DxAssert(mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBufferTex)), S_OK);
-      mWinFrameBuffer = new FrameBuffer(/*mDevice, mDeviceContext, mWinWidth, mWinHeight, D3D11_BIND_RENDER_TARGET, 0, backBufferTex*/);
-//
-//    // Sample state.
-//    {
-//        D3D11_SAMPLER_DESC desc;
-//        ZeroMemory(&desc, sizeof(D3D11_SAMPLER_DESC));
-//        desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-//        desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-//        desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-//        desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-//        desc.MinLOD = -FLT_MAX;
-//        desc.MaxLOD = FLT_MAX;
-//        desc.MipLODBias = 0.f;
-//        desc.MaxAnisotropy = 1;
-//        desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-//        DxAssert(mDevice->CreateSamplerState(&desc, &mSamplerState), S_OK);
-//        mDeviceContext->PSSetSamplers(0, 1, &mSamplerState);
-//    }
-//
-//    // Ras state.
-//    {
-//        D3D11_RASTERIZER_DESC desc;
-//        ZeroMemory(&desc, sizeof(D3D11_RASTERIZER_DESC));
-//        desc.FillMode = D3D11_FILL_SOLID; // D3D11_FILL_WIREFRAME
-//        desc.CullMode = D3D11_CULL_BACK;
-//        desc.FrontCounterClockwise = false;
-//        desc.DepthBias = 0;
-//        desc.SlopeScaledDepthBias = 0.f;
-//        desc.DepthBiasClamp = 0.f;
-//        desc.DepthClipEnable = true;
-//        desc.ScissorEnable = false;
-//        desc.MultisampleEnable = false;
-//        desc.AntialiasedLineEnable = false;
-//        DxAssert(mDevice->CreateRasterizerState(&desc, &mRasterizerState), S_OK);
-//        mDeviceContext->RSSetState(mRasterizerState);
-//    }
-//
-//    // Viewport.
-//    {
-//        D3D11_VIEWPORT vp;
-//        vp.Width = (float)mWinWidth;
-//        vp.Height = (float)mWinHeight;
-//        vp.MinDepth = 0.0f;
-//        vp.MaxDepth = 1.0f;
-//        vp.TopLeftX = 0;
-//        vp.TopLeftY = 0;
-//        mDeviceContext->RSSetViewports(1, &vp);
-//    }
+    ASSERT(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mGraphicsCommandAllocator)), S_OK);
+    ASSERT(mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mGraphicsCommandAllocator, NULL, IID_PPV_ARGS(&mGraphicsCommandList)), S_OK);
+    mGraphicsCommandList->Close();
 
+    ASSERT(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mGraphicsCompleteFence)), S_OK);
+    mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 }
 
 void D3D12Renderer::DeInitialiseD3D12()
 {
-    delete mWinFrameBuffer;
-
     //mSamplerState->Release();
     //mRasterizerState->Release();
 
-    //mDevice->Release();
-    //mDeviceContext->Release();
-    //mSwapChain->Release();
+    SAFE_RELEASE(mDevice);
+    delete mResouceHandle;
+    SAFE_RELEASE(mCommandQueue);
+    SAFE_RELEASE(mDescriptorHeap);
+    SAFE_RELEASE(mSwapChain);
+    for (std::size_t i = 0; i < mSwapChainFrameBufferList.size(); ++i) delete mSwapChainFrameBufferList[i];
+    SAFE_RELEASE(mGraphicsCommandAllocator);
+    SAFE_RELEASE(mGraphicsCommandList);
+    SAFE_RELEASE(mGraphicsCompleteFence);
+    CloseHandle(mFenceEvent);
 }

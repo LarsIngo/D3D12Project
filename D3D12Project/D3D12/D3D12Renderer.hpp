@@ -1,14 +1,16 @@
 #pragma once
 
 #ifdef _DEBUG
-#define BUILD_ENABLE_D3D11_DEBUG
+#define BUILD_ENABLE_D3D12_DEBUG
 #endif
 
 #include <GLFW/glfw3.h>
 #include <d3d12.h>
 #include <dxgi1_5.h>
 #include <d3dcompiler.h>
+#include <d3dx12.h>
 
+#include <vector>
 class FrameBuffer;
 
 class D3D12Renderer
@@ -28,18 +30,22 @@ class D3D12Renderer
         // Close window.
         void Close();
 
-        // Present.
-        // frameBuffer Frame buffer to present to window.
-        void Present(FrameBuffer* frameBuffer);
+        // Swap back buffer.
+        // Returns next active frame buffer to present to window.
+        FrameBuffer* SwapBackBuffer();
 
-        // D3D12 device.
-        ID3D12Device* mDevice;
-
-        // Command queue.
-        ID3D12CommandQueue* mCommandQueue;
+        // Present active back buffer.
+        void PresentBackBuffer();
 
         // GLFW window.
         GLFWwindow* mGLFWwindow;
+
+        // D3D12 device.
+        ID3D12Device* mDevice;
+        ID3D12CommandQueue* mCommandQueue;
+        ID3D12DescriptorHeap* mDescriptorHeap;
+        CD3DX12_CPU_DESCRIPTOR_HANDLE* mResouceHandle;
+
     private:
         void InitialiseGLFW();
         void DeInitialiseGLFW();
@@ -47,19 +53,21 @@ class D3D12Renderer
         void InitialiseD3D12();
         void DeInitialiseD3D12();
 
+        //D3D12
+        IDXGISwapChain4* mSwapChain;
+        UINT mActiveSwapchainBufferIndex;
+        std::vector<FrameBuffer*> mSwapChainFrameBufferList;
+
+        ID3D12CommandAllocator* mGraphicsCommandAllocator;
+        ID3D12GraphicsCommandList* mGraphicsCommandList;
+        ID3D12Fence* mGraphicsCompleteFence;
+        HANDLE mFenceEvent;
+
+        //ID3D11SamplerState* mSamplerState;
+        //ID3D11RasterizerState* mRasterizerState;
+
+
         unsigned int mWinWidth;
         unsigned int mWinHeight;
         bool mClose;
-
-        //D3D12
-        IDXGISwapChain4* mSwapChain;
-        ID3D12DescriptorHeap* mSwapChainDescriptorHeap;
-        unsigned int mActiveSwapchainBufferIndex;
-        static const unsigned int mSwapChainBufferCount = 3;
-        ID3D12Resource* mSwapChainRenderTargets[mSwapChainBufferCount];
-        unsigned int mRTVDescriptorSize;
-
-        FrameBuffer* mWinFrameBuffer;
-        //ID3D11SamplerState* mSamplerState;
-        //ID3D11RasterizerState* mRasterizerState;
 };
