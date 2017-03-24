@@ -46,10 +46,10 @@ FrameBuffer* D3D12Renderer::SwapBackBuffer()
 {
     mActiveSwapchainBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
 
-    UINT64 fenceCompletedValue = mFence->GetCompletedValue();
+    UINT64 fenceCompletedValue = mPresentCompleteFence->GetCompletedValue();
     if (fenceCompletedValue < mFrameID)
     {
-        ASSERT(mFence->SetEventOnCompletion(mFrameID, mSyncEvent), S_OK);
+        ASSERT(mPresentCompleteFence->SetEventOnCompletion(mFrameID, mSyncEvent), S_OK);
 
         WaitForSingleObject(mSyncEvent, INFINITE);
     }
@@ -62,13 +62,11 @@ FrameBuffer* D3D12Renderer::SwapBackBuffer()
 
 void D3D12Renderer::PresentBackBuffer()
 {
-    ++mFrameID;
-
-    // ExecuteCommandLists
-
-    mCommandQueue->Signal(mFence, mFrameID);
+    mCommandQueue->Signal(mPresentCompleteFence, mFrameID + 1);
 
     mSwapChain->Present(0, 0);
+
+    ++mFrameID;
 }
 
 void D3D12Renderer::InitialiseGLFW()
@@ -185,26 +183,22 @@ void D3D12Renderer::InitialiseD3D12()
     }
         
     ASSERT(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mGraphicsCommandAllocator)), S_OK);
-    ASSERT(mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mGraphicsCommandAllocator, NULL, IID_PPV_ARGS(&mGraphicsCommandList)), S_OK);
-    mGraphicsCommandList->Close();
 
-    ASSERT(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence)), S_OK);
+    
+    ASSERT(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mGraphicsCompleteFence)), S_OK);
+    ASSERT(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mPresentCompleteFence)), S_OK);
 
     mSyncEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    assert(mSyncEvent != nullptr);
 
     dxgiFactory->Release();
 }
 
 void D3D12Renderer::DeInitialiseD3D12()
 {
-    //mCommandQueue->Signal(mGraphicsCompleteFence, 0);
-    //mGraphicsCompleteFence->Signal(0);
-    //while (mGraphicsCompleteFence->GetCompletedValue() != 1);
-    // SYNC GPU/CPU
-
     CloseHandle(mSyncEvent);
-    SAFE_RELEASE(mFence);
-    SAFE_RELEASE(mGraphicsCommandList);
+    SAFE_RELEASE(mPresentCompleteFence);
+    SAFE_RELEASE(mGraphicsCompleteFence);
     SAFE_RELEASE(mGraphicsCommandAllocator);
     for (std::size_t i = 0; i < mSwapChainFrameBufferList.size(); ++i)
         delete mSwapChainFrameBufferList[i];

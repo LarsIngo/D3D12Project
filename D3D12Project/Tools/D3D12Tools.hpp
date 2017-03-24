@@ -33,7 +33,7 @@ namespace D3D12Tools
     void CreateResource(ID3D12Device* pDevice, const D3D12_RESOURCE_DESC& resouceDesc, ID3D12Resource** ppResource);
 
     // TransitionState
-    void TransitionState(ID3D12GraphicsCommandList& commandList, ID3D12Resource* pResource, D3D12_RESOURCE_STATES oldState, D3D12_RESOURCE_STATES newState);
+    void TransitionState(ID3D12GraphicsCommandList* pCommandList, ID3D12Resource* pResource, D3D12_RESOURCE_STATES oldState, D3D12_RESOURCE_STATES newState);
 
     inline void D3D12Tools::CreateResource(ID3D12Device* pDevice, const D3D12_RESOURCE_DESC& resouceDesc, ID3D12Resource** ppResource)
     {
@@ -46,8 +46,8 @@ namespace D3D12Tools
             IID_PPV_ARGS(ppResource)), S_OK);
     }
 
-    inline void D3D12Tools::TransitionState(ID3D12GraphicsCommandList& commandList, ID3D12Resource* pResource, D3D12_RESOURCE_STATES oldState, D3D12_RESOURCE_STATES newState)
+    inline void D3D12Tools::TransitionState(ID3D12GraphicsCommandList* pCommandList, ID3D12Resource* pResource, D3D12_RESOURCE_STATES oldState, D3D12_RESOURCE_STATES newState)
     {
-        commandList.ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pResource, oldState, newState));
+        pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pResource, oldState, newState));
     }
 }

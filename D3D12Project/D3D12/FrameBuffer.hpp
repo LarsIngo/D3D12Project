@@ -17,15 +17,15 @@ class FrameBuffer
         ~FrameBuffer();
 
         // Clear textures.
-        void Clear(ID3D12GraphicsCommandList& commandList, float r = 0.f, float g = 0.f, float b = 0.f, float a = 0.f, float depth = 1.f);
+        void Clear(ID3D12GraphicsCommandList* pCommandList, float r = 0.f, float g = 0.f, float b = 0.f, float a = 0.f, float depth = 1.f);
 
 		// Copy other frame buffer.
-		void Copy(ID3D12GraphicsCommandList& commandList, FrameBuffer* fb);
+		void Copy(ID3D12GraphicsCommandList* pCommandList, FrameBuffer* fb);
 
         // Transition state.
         // commandList Command buffer to make transition
         // newState State to transition to.
-        void TransitionState(ID3D12GraphicsCommandList& commandList, D3D12_RESOURCE_STATES newState);
+        void TransitionState(ID3D12GraphicsCommandList* pCommandList, D3D12_RESOURCE_STATES newState);
 
         // Frame buffer width in pixels.
         unsigned int mWidth;

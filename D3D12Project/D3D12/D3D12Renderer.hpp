@@ -44,10 +44,17 @@ class D3D12Renderer
         // D3D12.
         ID3D12Device* mDevice;
         ID3D12CommandQueue* mCommandQueue;
+        ID3D12CommandAllocator* mGraphicsCommandAllocator;
 
         DeviceHeapMemory* mDeviceHeapMemory;
 
         DXGI_FORMAT mBackBufferFormat;
+
+        ID3D12Fence* mGraphicsCompleteFence;
+        ID3D12Fence* mPresentCompleteFence;
+
+        UINT64 mFrameID;
+        HANDLE mSyncEvent;
 
     private:
         void InitialiseGLFW();
@@ -60,12 +67,6 @@ class D3D12Renderer
         IDXGISwapChain4* mSwapChain;
         UINT mActiveSwapchainBufferIndex;
         std::vector<FrameBuffer*> mSwapChainFrameBufferList;
-
-        ID3D12CommandAllocator* mGraphicsCommandAllocator;
-        ID3D12GraphicsCommandList* mGraphicsCommandList;
-        ID3D12Fence* mFence;
-        UINT64 mFrameID;
-        HANDLE mSyncEvent;
 
         unsigned int mWinWidth;
         unsigned int mWinHeight;

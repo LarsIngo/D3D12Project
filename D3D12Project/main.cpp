@@ -4,8 +4,9 @@
 #include "D3D12/D3D12Renderer.hpp"
 #include "Tools/CPUTimer.hpp"
 #include "Tools/D3D12Timer.hpp"
+#include "Tools/D3D12Tools.hpp"
 #include "D3D12/FrameBuffer.hpp"
-#include "Particle/ParticleSystem.hpp"
+#include "Particle/ParticleRenderSystem.hpp"
 #include "Scene/Scene.hpp"
 #include "Camera/Camera.hpp"
 #include "Managers/InputManager.hpp"
@@ -24,7 +25,11 @@ int main()
     ID3D12Device* device = renderer.mDevice;
     DeviceHeapMemory* deviceHeapMemory = renderer.mDeviceHeapMemory;
 
-    ParticleSystem particleSystem;//(device, deviceContext);
+    ID3D12GraphicsCommandList* graphicsCommandList;
+    ASSERT(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, renderer.mGraphicsCommandAllocator, NULL, IID_PPV_ARGS(&graphicsCommandList)), S_OK);
+    graphicsCommandList->Close();
+
+    ParticleRenderSystem particleRenderSystem(device, renderer.mBackBufferFormat, width, height);
     
     InputManager inputManager(renderer.mGLFWwindow);
 
@@ -72,15 +77,30 @@ int main()
                 //particleSystem.Update(&scene, dt);
                 // --- UPDATE --- //
 
+                system("pause");
+
                 // +++ RENDER +++ //
+                UINT64 fenceCompletedValue = renderer.mGraphicsCompleteFence->GetCompletedValue();
+                if (fenceCompletedValue < renderer.mFrameID)
+                {
+                    ASSERT(renderer.mGraphicsCompleteFence->SetEventOnCompletion(renderer.mFrameID, renderer.mSyncEvent), S_OK);
+                    WaitForSingleObject(renderer.mSyncEvent, INFINITE);
+                }
+                ASSERT(renderer.mGraphicsCommandAllocator->Reset(), S_OK);
+                ASSERT(graphicsCommandList->Reset(renderer.mGraphicsCommandAllocator, particleRenderSystem.mPipeline), S_OK);
+
                 FrameBuffer* backBuffer = renderer.SwapBackBuffer();
 
+                backBuffer->TransitionState(graphicsCommandList, D3D12_RESOURCE_STATE_COPY_DEST);
+                camera.mpFrameBuffer->Clear(graphicsCommandList, 0.8f, 0.2f, 0.2f);
+                particleRenderSystem.Render(graphicsCommandList, &scene, &camera);
+                backBuffer->Copy(graphicsCommandList, camera.mpFrameBuffer);
+                backBuffer->TransitionState(graphicsCommandList, D3D12_RESOURCE_STATE_PRESENT);
 
-                //backBuffer->TransitionImageLayout(graphicsCommandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-                //camera.mpFrameBuffer->Clear(0.2f, 0.2f, 0.2f);
-                //particleSystem.Render(&scene, &camera);
-                //backBuffer->Copy(camera.mpFrameBuffer);
-                //backBuffer->TransitionImageLayout(graphicsCommandBuffer, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+                renderer.mCommandQueue->Signal(renderer.mGraphicsCompleteFence, renderer.mFrameID + 1);
+                ASSERT(graphicsCommandList->Close(), S_OK);
+                ID3D12CommandList* ppGraphicsCommandLists[] = { graphicsCommandList };
+                renderer.mCommandQueue->ExecuteCommandLists(_countof(ppGraphicsCommandLists), ppGraphicsCommandLists);
                 // --- RENDER --- //
 
                 // +++ PRESENET +++ //
@@ -100,6 +120,7 @@ int main()
     // --- MAIN LOOP --- //
 
     // +++ SHUTDOWN +++ //
+    graphicsCommandList->Release();
     // --- SHUTDOWN --- //
 
     return 0;

@@ -165,7 +165,8 @@
     <ClCompile Include="D3D12\StorageSwapBuffer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Managers\InputManager.cpp" />
-    <ClCompile Include="Particle\ParticleSystem.cpp" />
+    <ClCompile Include="Particle\ParticleRenderSystem.cpp" />
+    <ClCompile Include="Particle\ParticleUpdateSystem.cpp" />
     <ClCompile Include="Scene\Scene.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -177,7 +178,9 @@
     <ClInclude Include="D3D12\StorageSwapBuffer.hpp" />
     <ClInclude Include="Managers\InputManager.hpp" />
     <ClInclude Include="Particle\Particle.hpp" />
+    <ClInclude Include="Particle\ParticleRenderSystem.hpp" />
     <ClInclude Include="Particle\ParticleSystem.hpp" />
+    <ClInclude Include="Particle\ParticleUpdateSystem.hpp" />
     <ClInclude Include="Scene\Scene.hpp" />
     <ClInclude Include="Tools\CPUTimer.hpp" />
     <ClInclude Include="Tools\D3D12Timer.hpp" />

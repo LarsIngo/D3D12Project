@@ -8,6 +8,7 @@ FrameBuffer::FrameBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMem
     mpDeviceHeapMemory = pDeviceHeapMemory;
     mWidth = width;
     mHeight = height;
+    mFormat = format;
 
     if (pInitResouce == nullptr)
     {
@@ -15,9 +16,9 @@ FrameBuffer::FrameBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMem
         D3D12_RESOURCE_DESC resouceDesc;
         ZeroMemory(&resouceDesc, sizeof(resouceDesc));
         resouceDesc.MipLevels = 1;
-        resouceDesc.Format = format;
-        resouceDesc.Width = width;
-        resouceDesc.Height = height;
+        resouceDesc.Format = mFormat;
+        resouceDesc.Width = mWidth;
+        resouceDesc.Height = mHeight;
         resouceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
         resouceDesc.DepthOrArraySize = 1;
         resouceDesc.SampleDesc.Count = 1;
@@ -45,27 +46,32 @@ FrameBuffer::~FrameBuffer()
     //if (mColUAV != nullptr) mColUAV->Release();
 }
 
-void FrameBuffer::Clear(ID3D12GraphicsCommandList& commandList, float r, float g, float b, float a, float depth)
+void FrameBuffer::Clear(ID3D12GraphicsCommandList* pCommandList, float r, float g, float b, float a, float depth)
 {
-    //float clrColor[4] = { r, g, b, a };
-    //float clrWorld[4] = { 0.f, 0.f, 0.f, 0.f };
-    //float clrNorm[4] = { 0.f, 0.f, 0.f, 0.f };
-    //float clrDepth[4] = { 0.f, 0.f, 0.f, 0.f };
-    //if (mColRTV != nullptr) mpDeviceContext->ClearRenderTargetView(mColRTV, clrColor);
+    TransitionState(pCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+    float clrColor[4] = { r, g, b, a };
+    pCommandList->ClearRenderTargetView(mRTV, clrColor, 0, nullptr);
 }
 
-void FrameBuffer::Copy(ID3D12GraphicsCommandList& commandList, FrameBuffer* fb)
+void FrameBuffer::Copy(ID3D12GraphicsCommandList* pCommandList, FrameBuffer* fb)
 {
- //   assert(fb != this);
-	//assert(mWidth == fb->mWidth && mHeight == fb->mHeight);
- //   assert(mMipLevels == fb->mMipLevels);
+    assert(fb != this);
+	assert(mWidth == fb->mWidth && mHeight == fb->mHeight);
 
- //   DxHelp::CopyTexture(mpDeviceContext, mColTex, fb->mColTex, mWidth, mHeight, mMipLevels);
+    fb->TransitionState(pCommandList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+
+    TransitionState(pCommandList, D3D12_RESOURCE_STATE_COPY_DEST);
+
+    pCommandList->CopyResource(mResource, fb->mResource);
 }
 
-void FrameBuffer::TransitionState(ID3D12GraphicsCommandList& commandList, D3D12_RESOURCE_STATES newState)
+void FrameBuffer::TransitionState(ID3D12GraphicsCommandList* pCommandList, D3D12_RESOURCE_STATES newState)
 {
-    D3D12Tools::TransitionState(commandList, mResource, mState, newState);
+    if (mState == newState)
+        return;
+
+    D3D12Tools::TransitionState(pCommandList, mResource, mState, newState);
     mState = newState;
 }
 
