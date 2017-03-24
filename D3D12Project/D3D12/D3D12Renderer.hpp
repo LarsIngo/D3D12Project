@@ -63,8 +63,9 @@ class D3D12Renderer
 
         ID3D12CommandAllocator* mGraphicsCommandAllocator;
         ID3D12GraphicsCommandList* mGraphicsCommandList;
-        ID3D12Fence* mGraphicsCompleteFence;
-        HANDLE mFenceEvent;
+        ID3D12Fence* mFence;
+        UINT64 mFrameID;
+        HANDLE mSyncEvent;
 
         unsigned int mWinWidth;
         unsigned int mWinHeight;

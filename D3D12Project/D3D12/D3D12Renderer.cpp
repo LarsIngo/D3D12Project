@@ -12,6 +12,7 @@ D3D12Renderer::D3D12Renderer(unsigned int winWidth, unsigned int winHeight)
     mWinWidth = winWidth;
     mWinHeight = winHeight;
     mClose = false;
+    mFrameID = 0;
 
     // Window.
     InitialiseGLFW();
@@ -44,6 +45,15 @@ void D3D12Renderer::Close()
 FrameBuffer* D3D12Renderer::SwapBackBuffer()
 {
     mActiveSwapchainBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
+
+    UINT64 fenceCompletedValue = mFence->GetCompletedValue();
+    if (fenceCompletedValue < mFrameID)
+    {
+        ASSERT(mFence->SetEventOnCompletion(mFrameID, mSyncEvent), S_OK);
+
+        WaitForSingleObject(mSyncEvent, INFINITE);
+    }
+
     assert(mActiveSwapchainBufferIndex <= mSwapChainFrameBufferList.size());
 
     return mSwapChainFrameBufferList[mActiveSwapchainBufferIndex];
@@ -52,6 +62,12 @@ FrameBuffer* D3D12Renderer::SwapBackBuffer()
 
 void D3D12Renderer::PresentBackBuffer()
 {
+    ++mFrameID;
+
+    // ExecuteCommandLists
+
+    mCommandQueue->Signal(mFence, mFrameID);
+
     mSwapChain->Present(0, 0);
 }
 
@@ -172,21 +188,28 @@ void D3D12Renderer::InitialiseD3D12()
     ASSERT(mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mGraphicsCommandAllocator, NULL, IID_PPV_ARGS(&mGraphicsCommandList)), S_OK);
     mGraphicsCommandList->Close();
 
-    ASSERT(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mGraphicsCompleteFence)), S_OK);
-    mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    ASSERT(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence)), S_OK);
+
+    mSyncEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
     dxgiFactory->Release();
 }
 
 void D3D12Renderer::DeInitialiseD3D12()
 {
-    SAFE_RELEASE(mDevice);
-    SAFE_RELEASE(mCommandQueue);
-    delete mDeviceHeapMemory;
-    SAFE_RELEASE(mSwapChain);
-    for (std::size_t i = 0; i < mSwapChainFrameBufferList.size(); ++i) delete mSwapChainFrameBufferList[i];
-    SAFE_RELEASE(mGraphicsCommandAllocator);
+    //mCommandQueue->Signal(mGraphicsCompleteFence, 0);
+    //mGraphicsCompleteFence->Signal(0);
+    //while (mGraphicsCompleteFence->GetCompletedValue() != 1);
+    // SYNC GPU/CPU
+
+    CloseHandle(mSyncEvent);
+    SAFE_RELEASE(mFence);
     SAFE_RELEASE(mGraphicsCommandList);
-    SAFE_RELEASE(mGraphicsCompleteFence);
-    CloseHandle(mFenceEvent);
+    SAFE_RELEASE(mGraphicsCommandAllocator);
+    for (std::size_t i = 0; i < mSwapChainFrameBufferList.size(); ++i)
+        delete mSwapChainFrameBufferList[i];
+    SAFE_RELEASE(mSwapChain);
+    delete mDeviceHeapMemory;
+    SAFE_RELEASE(mCommandQueue);
+    SAFE_RELEASE(mDevice);
 }
