@@ -159,6 +159,7 @@
   <ItemGroup>
     <ClCompile Include="Camera\Camera.cpp" />
     <ClCompile Include="D3D12\D3D12Renderer.cpp" />
+    <ClCompile Include="D3D12\DeviceHeapMemory.cpp" />
     <ClCompile Include="D3D12\FrameBuffer.cpp" />
     <ClCompile Include="D3D12\StorageBuffer.cpp" />
     <ClCompile Include="D3D12\StorageSwapBuffer.cpp" />
@@ -170,6 +171,7 @@
   <ItemGroup>
     <ClInclude Include="Camera\Camera.hpp" />
     <ClInclude Include="D3D12\D3D12Renderer.hpp" />
+    <ClInclude Include="D3D12\DeviceHeapMemory.hpp" />
     <ClInclude Include="D3D12\FrameBuffer.hpp" />
     <ClInclude Include="D3D12\StorageBuffer.hpp" />
     <ClInclude Include="D3D12\StorageSwapBuffer.hpp" />

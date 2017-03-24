@@ -12,6 +12,7 @@
 
 #include <vector>
 class FrameBuffer;
+class DeviceHeapMemory;
 
 class D3D12Renderer
 {
@@ -40,11 +41,12 @@ class D3D12Renderer
         // GLFW window.
         GLFWwindow* mGLFWwindow;
 
-        // D3D12 device.
+        // D3D12.
         ID3D12Device* mDevice;
         ID3D12CommandQueue* mCommandQueue;
-        ID3D12DescriptorHeap* mDescriptorHeap;
-        //CD3DX12_CPU_DESCRIPTOR_HANDLE* mResouceHandle;
+
+        DeviceHeapMemory* mDeviceHeapMemory;
+
         DXGI_FORMAT mBackBufferFormat;
 
     private:
@@ -54,7 +56,7 @@ class D3D12Renderer
         void InitialiseD3D12();
         void DeInitialiseD3D12();
 
-        //D3D12
+        //D3D12.
         IDXGISwapChain4* mSwapChain;
         UINT mActiveSwapchainBufferIndex;
         std::vector<FrameBuffer*> mSwapChainFrameBufferList;
@@ -63,10 +65,6 @@ class D3D12Renderer
         ID3D12GraphicsCommandList* mGraphicsCommandList;
         ID3D12Fence* mGraphicsCompleteFence;
         HANDLE mFenceEvent;
-
-        //ID3D11SamplerState* mSamplerState;
-        //ID3D11RasterizerState* mRasterizerState;
-
 
         unsigned int mWinWidth;
         unsigned int mWinHeight;

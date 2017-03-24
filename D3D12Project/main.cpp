@@ -22,13 +22,13 @@ int main()
     D3D12Renderer renderer(width, height);
 
     ID3D12Device* device = renderer.mDevice;
+    DeviceHeapMemory* deviceHeapMemory = renderer.mDeviceHeapMemory;
 
     ParticleSystem particleSystem;//(device, deviceContext);
     
     InputManager inputManager(renderer.mGLFWwindow);
 
-    FrameBuffer frameBuffer(device, width, height, renderer.mBackBufferFormat);
-    frameBuffer.GenerateRTV(renderer.mDescriptorHeap);
+    FrameBuffer frameBuffer(device, deviceHeapMemory, width, height, renderer.mBackBufferFormat);
     Camera camera(60.f, &frameBuffer);
     camera.mPosition.z = -5.f;
 

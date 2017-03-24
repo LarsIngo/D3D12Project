@@ -4,14 +4,14 @@
 #include <d3dx12.h>
 #include <glm/glm.hpp>
 
+class DeviceHeapMemory;
+
 class FrameBuffer
 {
     public:
         // Constructor.
         // pDevice Pointer to D3D12 device.
-        FrameBuffer(ID3D12Device* pDevice, unsigned int width, unsigned int height, DXGI_FORMAT format);
-
-        FrameBuffer(ID3D12Device* pDevice, ID3D12Resource* pResouce);
+        FrameBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, unsigned int width, unsigned int height, DXGI_FORMAT format, ID3D12Resource* pInitResouce = nullptr);
 
         // Destructor.
         ~FrameBuffer();
@@ -27,9 +27,6 @@ class FrameBuffer
         // newState State to transition to.
         void TransitionState(ID3D12GraphicsCommandList& commandList, D3D12_RESOURCE_STATES newState);
 
-        // Generate render target view.
-        void GenerateRTV(ID3D12DescriptorHeap* heapRTV);
-
         // Frame buffer width in pixels.
         unsigned int mWidth;
         // Frame buffer height in pixels.
@@ -42,14 +39,8 @@ class FrameBuffer
         // Color.
         ID3D12Resource* mResource;
         CD3DX12_CPU_DESCRIPTOR_HANDLE mRTV;
-        //ID3D11ShaderResourceView* mColSRV;
-        //ID3D11RenderTargetView* mColRTV;
-        //ID3D11UnorderedAccessView* mColUAV;
-
-        // Depth stencil.
-        //ID3D11Texture2D* mDepthStencilTex;
-        //ID3D11DepthStencilView* mDepthStencilDSV;
 
     private:
         ID3D12Device* mpDevice;
+        DeviceHeapMemory* mpDeviceHeapMemory;
 };

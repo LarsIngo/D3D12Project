@@ -1,4 +1,5 @@
 #include "D3D12Renderer.hpp"
+#include "DeviceHeapMemory.hpp"
 #include "../Tools/D3D12Tools.hpp"
 #include "FrameBuffer.hpp"
 #include <d3dx12.h>
@@ -106,7 +107,7 @@ void D3D12Renderer::InitialiseD3D12()
             ++adapterIndex;
             continue;
         }
-        HRESULT hr = D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_0, __uuidof(ID3D12Device), nullptr);
+        HRESULT hr = D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), nullptr);
         if (SUCCEEDED(hr))
         {
             adapterFound = true;
@@ -116,7 +117,7 @@ void D3D12Renderer::InitialiseD3D12()
     }
     ASSERT(adapterFound, true);
 
-    ASSERT(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice)), S_OK);
+    ASSERT(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&mDevice)), S_OK);
     adapter->Release();
 
     
@@ -127,15 +128,7 @@ void D3D12Renderer::InitialiseD3D12()
     commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
     ASSERT(mDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&mCommandQueue)), S_OK);
 
-
-    D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc;
-    descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-    descriptorHeapDesc.NumDescriptors = 10;
-    descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-    descriptorHeapDesc.NodeMask = 0;
-    ASSERT(mDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&mDescriptorHeap)), S_OK);
-
-    //mResouceHandle = new CD3DX12_CPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+    mDeviceHeapMemory = new DeviceHeapMemory(mDevice);
     
     mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     DXGI_MODE_DESC backBufferDesc;
@@ -172,7 +165,7 @@ void D3D12Renderer::InitialiseD3D12()
     {
         ID3D12Resource* resource;
         mSwapChain->GetBuffer(i, __uuidof(ID3D12Resource), reinterpret_cast<void**>(&resource));
-        mSwapChainFrameBufferList[i] = new FrameBuffer(mDevice, resource);
+        mSwapChainFrameBufferList[i] = new FrameBuffer(mDevice, mDeviceHeapMemory, mWinWidth, mWinHeight, mBackBufferFormat, resource);
     }
         
     ASSERT(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mGraphicsCommandAllocator)), S_OK);
@@ -187,12 +180,9 @@ void D3D12Renderer::InitialiseD3D12()
 
 void D3D12Renderer::DeInitialiseD3D12()
 {
-    //mSamplerState->Release();
-    //mRasterizerState->Release();
     SAFE_RELEASE(mDevice);
-    //delete mResouceHandle;
     SAFE_RELEASE(mCommandQueue);
-    SAFE_RELEASE(mDescriptorHeap);
+    delete mDeviceHeapMemory;
     SAFE_RELEASE(mSwapChain);
     for (std::size_t i = 0; i < mSwapChainFrameBufferList.size(); ++i) delete mSwapChainFrameBufferList[i];
     SAFE_RELEASE(mGraphicsCommandAllocator);
