@@ -102,6 +102,7 @@ void D3D12Renderer::InitialiseD3D12()
         adapter->GetDesc1(&desc);
         if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
         {
+            adapter->Release();
             ++adapterIndex;
             continue;
         }
@@ -116,8 +117,9 @@ void D3D12Renderer::InitialiseD3D12()
     ASSERT(adapterFound, true);
 
     ASSERT(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice)), S_OK);
+    adapter->Release();
 
-
+    
     D3D12_COMMAND_QUEUE_DESC commandQueueDesc;
     commandQueueDesc.Priority = 0;
     commandQueueDesc.NodeMask = 0;
@@ -133,15 +135,15 @@ void D3D12Renderer::InitialiseD3D12()
     descriptorHeapDesc.NodeMask = 0;
     ASSERT(mDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&mDescriptorHeap)), S_OK);
 
-    mResouceHandle = new CD3DX12_CPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
-
+    //mResouceHandle = new CD3DX12_CPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+    
+    mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     DXGI_MODE_DESC backBufferDesc;
     backBufferDesc.Width = mWinWidth;
     backBufferDesc.Height = mWinHeight;
     backBufferDesc.RefreshRate.Numerator = 0;
     backBufferDesc.RefreshRate.Denominator = 0;
-    backBufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    backBufferDesc.Format = mBackBufferFormat;
     backBufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
     backBufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 
@@ -151,7 +153,7 @@ void D3D12Renderer::InitialiseD3D12()
 
     const std::size_t swapChainBufferCount = 3;
     mSwapChainFrameBufferList.resize(swapChainBufferCount);
-
+    
     DXGI_SWAP_CHAIN_DESC swapChainDesc;
     swapChainDesc.BufferDesc = backBufferDesc;
     swapChainDesc.SampleDesc = sampleDesc;
@@ -165,30 +167,30 @@ void D3D12Renderer::InitialiseD3D12()
     IDXGISwapChain* tmpSwapChain;
     ASSERT(dxgiFactory->CreateSwapChain(mCommandQueue, &swapChainDesc, &tmpSwapChain), S_OK);
     mSwapChain = static_cast<IDXGISwapChain4*>(tmpSwapChain);
-
+    
     for (std::size_t i = 0; i < mSwapChainFrameBufferList.size(); ++i)
     {
         ID3D12Resource* resource;
         mSwapChain->GetBuffer(i, __uuidof(ID3D12Resource), reinterpret_cast<void**>(&resource));
-        mSwapChainFrameBufferList[i] = new FrameBuffer(mDevice, mResouceHandle, mWinWidth, mWinHeight, resource);
+        mSwapChainFrameBufferList[i] = new FrameBuffer(mDevice, resource);
     }
         
-
     ASSERT(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mGraphicsCommandAllocator)), S_OK);
     ASSERT(mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mGraphicsCommandAllocator, NULL, IID_PPV_ARGS(&mGraphicsCommandList)), S_OK);
     mGraphicsCommandList->Close();
 
     ASSERT(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mGraphicsCompleteFence)), S_OK);
     mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+
+    dxgiFactory->Release();
 }
 
 void D3D12Renderer::DeInitialiseD3D12()
 {
     //mSamplerState->Release();
     //mRasterizerState->Release();
-
     SAFE_RELEASE(mDevice);
-    delete mResouceHandle;
+    //delete mResouceHandle;
     SAFE_RELEASE(mCommandQueue);
     SAFE_RELEASE(mDescriptorHeap);
     SAFE_RELEASE(mSwapChain);

@@ -44,7 +44,8 @@ class D3D12Renderer
         ID3D12Device* mDevice;
         ID3D12CommandQueue* mCommandQueue;
         ID3D12DescriptorHeap* mDescriptorHeap;
-        CD3DX12_CPU_DESCRIPTOR_HANDLE* mResouceHandle;
+        //CD3DX12_CPU_DESCRIPTOR_HANDLE* mResouceHandle;
+        DXGI_FORMAT mBackBufferFormat;
 
     private:
         void InitialiseGLFW();

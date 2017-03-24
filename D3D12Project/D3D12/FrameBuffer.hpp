@@ -9,7 +9,7 @@ class FrameBuffer
     public:
         // Constructor.
         // pDevice Pointer to D3D12 device.
-        FrameBuffer(ID3D12Device* pDevice, CD3DX12_CPU_DESCRIPTOR_HANDLE* pResourceHandle);
+        FrameBuffer(ID3D12Device* pDevice, unsigned int width, unsigned int height, DXGI_FORMAT format);
 
         FrameBuffer(ID3D12Device* pDevice, ID3D12Resource* pResouce);
 
@@ -17,25 +17,31 @@ class FrameBuffer
         ~FrameBuffer();
 
         // Clear textures.
-        void Clear(const ID3D12CommandList& commandList, float r = 0.f, float g = 0.f, float b = 0.f, float a = 0.f, float depth = 1.f);
+        void Clear(ID3D12GraphicsCommandList& commandList, float r = 0.f, float g = 0.f, float b = 0.f, float a = 0.f, float depth = 1.f);
 
 		// Copy other frame buffer.
-		void Copy(const ID3D12CommandList& commandList, FrameBuffer* fb);
+		void Copy(ID3D12GraphicsCommandList& commandList, FrameBuffer* fb);
 
-        // Transition image layout.
-        // commandbuffer Command buffer to make transition
-        // newLayout Layout to transition to.
-        void TransitionImageLayout(const ID3D12CommandList& commandList/*, VkImageLayout newLayout*/);
+        // Transition state.
+        // commandList Command buffer to make transition
+        // newState State to transition to.
+        void TransitionState(ID3D12GraphicsCommandList& commandList, D3D12_RESOURCE_STATES newState);
+
+        // Generate render target view.
+        void GenerateRTV(ID3D12DescriptorHeap* heapRTV);
 
         // Frame buffer width in pixels.
         unsigned int mWidth;
         // Frame buffer height in pixels.
         unsigned int mHeight;
-		// Number of mip levels.
-		unsigned int mMipLevels;
+		// Format.
+		DXGI_FORMAT mFormat;
+        // State.
+        D3D12_RESOURCE_STATES mState;
 
         // Color.
-        //ID3D11Texture2D* mColTex;
+        ID3D12Resource* mResource;
+        CD3DX12_CPU_DESCRIPTOR_HANDLE mRTV;
         //ID3D11ShaderResourceView* mColSRV;
         //ID3D11RenderTargetView* mColRTV;
         //ID3D11UnorderedAccessView* mColUAV;
@@ -46,6 +52,4 @@ class FrameBuffer
 
     private:
         ID3D12Device* mpDevice;
-        ID3D12Resource* mResource;
-        bool mMyResource;
 };

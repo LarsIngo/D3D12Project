@@ -20,14 +20,15 @@ int main()
     unsigned int width = 1920 / 2;
     unsigned int height = 1080 / 2;
     D3D12Renderer renderer(width, height);
+
     ID3D12Device* device = renderer.mDevice;
-    CD3DX12_CPU_DESCRIPTOR_HANDLE* resouceHandle = renderer.mResouceHandle;
 
     ParticleSystem particleSystem;//(device, deviceContext);
     
     InputManager inputManager(renderer.mGLFWwindow);
 
-    FrameBuffer frameBuffer(device, resouceHandle, width, height);// (device, deviceContext, width, height);
+    FrameBuffer frameBuffer(device, width, height, renderer.mBackBufferFormat);
+    frameBuffer.GenerateRTV(renderer.mDescriptorHeap);
     Camera camera(60.f, &frameBuffer);
     camera.mPosition.z = -5.f;
 
@@ -70,7 +71,7 @@ int main()
                 CPUTIMER(dt);
                 // +++ UPDATE +++ //
                 if (gpuProfile) gpuComputeTimer.Start();
-                camera.Update(20.f, 2.f, dt, &inputManager);
+                //camera.Update(20.f, 2.f, dt, &inputManager);
                 particleSystem.Update(&scene, dt);
                 if (gpuProfile)
                 {
@@ -87,7 +88,7 @@ int main()
                 if (gpuProfile) gpuGraphicsTimer.Start();
                 //backBuffer->TransitionImageLayout(graphicsCommandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
                 //camera.mpFrameBuffer->Clear(0.2f, 0.2f, 0.2f);
-                particleSystem.Render(&scene, &camera);
+                //particleSystem.Render(&scene, &camera);
                 //backBuffer->Copy(camera.mpFrameBuffer);
                 //backBuffer->TransitionImageLayout(graphicsCommandBuffer, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
                 if (gpuProfile)
