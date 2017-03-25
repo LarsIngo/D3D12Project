@@ -33,6 +33,7 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DXGI_FORMAT fo
 
     D3D12_SHADER_BYTECODE vertexShaderBytecode = {};
     {
+        
         ID3DBlob* vertexShader;
         ID3DBlob* errorBuff;
         HRESULT hr = D3DCompileFromFile(L"../resources/shaders/Particles_Render_VS.hlsl",
@@ -53,6 +54,29 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DXGI_FORMAT fo
         vertexShaderBytecode.pShaderBytecode = vertexShader->GetBufferPointer();
     }
 
+    D3D12_SHADER_BYTECODE geometryShaderBytecode = {};
+    {
+
+        ID3DBlob* geometryShader;
+        ID3DBlob* errorBuff;
+        HRESULT hr = D3DCompileFromFile(L"../resources/shaders/Particles_Render_GS.hlsl",
+            nullptr,
+            nullptr,
+            "main",
+            "gs_5_0",
+            D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+            0,
+            &geometryShader,
+            &errorBuff);
+        if (FAILED(hr))
+        {
+            OutputDebugStringA((char*)errorBuff->GetBufferPointer());
+            assert(0 && "Geomery shader compile error");
+        }
+        geometryShaderBytecode.BytecodeLength = geometryShader->GetBufferSize();
+        geometryShaderBytecode.pShaderBytecode = geometryShader->GetBufferPointer();
+    }
+
     D3D12_SHADER_BYTECODE pixelShaderBytecode = {};
     {
         ID3DBlob* pixelShader;
@@ -71,37 +95,51 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DXGI_FORMAT fo
             OutputDebugStringA((char*)errorBuff->GetBufferPointer());
             assert(0 && "Pixel shader compile error");
         }
+        pixelShaderBytecode.BytecodeLength = pixelShader->GetBufferSize();
+        pixelShaderBytecode.pShaderBytecode = pixelShader->GetBufferPointer();
     }
 
-    D3D12_INPUT_LAYOUT_DESC inputLayoutDesc = {};
+    //D3D12_INPUT_ELEMENT_DESC inputLayout[] =
+    //{
+    //    { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+    //};
 
+    // fill out an input layout description structure
+    //D3D12_INPUT_LAYOUT_DESC inputLayoutDesc = {};
 
-    DXGI_SAMPLE_DESC sampleDesc = {};
-    sampleDesc.Count = 1; // multisample count (no multisampling, so we just put 1, since we still need 1 sample)
+    //// we can get the number of elements in an array by "sizeof(array) / sizeof(arrayElementType)"
+    //inputLayoutDesc.NumElements = sizeof(inputLayout) / sizeof(D3D12_INPUT_ELEMENT_DESC);
+    //inputLayoutDesc.pInputElementDescs = inputLayout;
+
+    DXGI_SAMPLE_DESC sampleDesc;
+    sampleDesc.Count = 1;
+    sampleDesc.Quality = 0;
+
+    D3D12_RASTERIZER_DESC rasterizerDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    D3D12_BLEND_DESC blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-    psoDesc.InputLayout = inputLayoutDesc;
     psoDesc.pRootSignature = mRootSignature;
     psoDesc.VS = vertexShaderBytecode;
+    psoDesc.GS = geometryShaderBytecode;
     psoDesc.PS = pixelShaderBytecode;
-    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
     psoDesc.RTVFormats[0] = mFormat;
     psoDesc.SampleDesc = sampleDesc;
     psoDesc.SampleMask = 0xffffffff;
-    psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-    psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    psoDesc.RasterizerState = rasterizerDesc;
+    psoDesc.BlendState = blendDesc;
     psoDesc.NumRenderTargets = 1;
 
     ASSERT(mpDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPipeline)), S_OK);
 
     mViewport.TopLeftX = 0;
     mViewport.TopLeftY = 0;
-    mViewport.Width = mWidth;
-    mViewport.Height = mHeight;
+    mViewport.Width = (float)mWidth;
+    mViewport.Height = (float)mHeight;
     mViewport.MinDepth = 0.0f;
     mViewport.MaxDepth = 1.0f;
 
-    // Fill out a scissor rect
     mScissorRect.left = 0;
     mScissorRect.top = 0;
     mScissorRect.right = mWidth;
@@ -118,12 +156,12 @@ void ParticleRenderSystem::Render(ID3D12GraphicsCommandList* pCommandList, Scene
 {
     FrameBuffer* fb = camera->mpFrameBuffer;
     fb->TransitionState(pCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    //pCommandList->SetPipelineState(mPipeline);
     pCommandList->SetGraphicsRootSignature(mRootSignature);
-    pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+    pCommandList->SetPipelineState(mPipeline);
     pCommandList->RSSetViewports(1, &mViewport);
     pCommandList->RSSetScissorRects(1, &mScissorRect);
+    pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
     pCommandList->OMSetRenderTargets(1, &fb->mRTV, FALSE, NULL);
-    pCommandList->DrawInstanced(3, 1, 0, 0);
+    pCommandList->DrawInstanced(1, 1, 0, 0);
 }
 

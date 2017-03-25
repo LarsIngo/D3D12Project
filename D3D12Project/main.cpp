@@ -77,7 +77,7 @@ int main()
                 //particleSystem.Update(&scene, dt);
                 // --- UPDATE --- //
 
-                system("pause");
+                //system("pause");
 
                 // +++ RENDER +++ //
                 UINT64 fenceCompletedValue = renderer.mGraphicsCompleteFence->GetCompletedValue();
@@ -87,14 +87,16 @@ int main()
                     WaitForSingleObject(renderer.mSyncEvent, INFINITE);
                 }
                 ASSERT(renderer.mGraphicsCommandAllocator->Reset(), S_OK);
-                ASSERT(graphicsCommandList->Reset(renderer.mGraphicsCommandAllocator, particleRenderSystem.mPipeline), S_OK);
+                ASSERT(graphicsCommandList->Reset(renderer.mGraphicsCommandAllocator, nullptr), S_OK);
+                
 
                 FrameBuffer* backBuffer = renderer.SwapBackBuffer();
 
                 backBuffer->TransitionState(graphicsCommandList, D3D12_RESOURCE_STATE_COPY_DEST);
-                camera.mpFrameBuffer->Clear(graphicsCommandList, 0.8f, 0.2f, 0.2f);
+                camera.mpFrameBuffer = backBuffer; // TMP
+                camera.mpFrameBuffer->Clear(graphicsCommandList, 0.2f, 0.2f, 0.8f);
                 particleRenderSystem.Render(graphicsCommandList, &scene, &camera);
-                backBuffer->Copy(graphicsCommandList, camera.mpFrameBuffer);
+                //backBuffer->Copy(graphicsCommandList, camera.mpFrameBuffer);
                 backBuffer->TransitionState(graphicsCommandList, D3D12_RESOURCE_STATE_PRESENT);
 
                 renderer.mCommandQueue->Signal(renderer.mGraphicsCompleteFence, renderer.mFrameID + 1);

@@ -1,4 +1,19 @@
-float4 main(uint id : SV_VertexID) : SV_POSITION
+// Particle.
+struct Particle
 {
-    return float4((id == 0 || id == 1) * 2 - 1, (id == 0 || id == 2) * 2 - 1, 0, 1);
+    float4 position : SV_POSITION;
+    float4 velocity : VELOCITY;
+    float4 color : COLOR;
+    float4 scale : SCALE;
+};
+//StructuredBuffer<Particle> g_Input : register(t0);
+
+Particle main(uint vID : SV_VertexID)
+{
+    Particle p;
+    p.position = float4(0.f, 0.f, 0.f, 0.f);
+    p.velocity = float4(0.f, 0.f, 0.f, 0.f);
+    p.color = float4(1.f, 1.f, 1.f, 1.f);
+    p.scale = float4(1.f, 1.f, 0.f, 0.f);
+    return p;
 }

@@ -33,6 +33,7 @@ FrameBuffer::FrameBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMem
         mResource = pInitResouce;
     }
 
+    mResource->SetName(L"Frame buffer");
     mRTV = mpDeviceHeapMemory->GenerateRTV(mResource);
 }
 
