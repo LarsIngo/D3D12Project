@@ -16,13 +16,13 @@ Scene::~Scene()
     delete mParticleBuffer;
 }
 
-void Scene::AddParticles(std::vector<Particle>& particleList)
+void Scene::AddParticles(ID3D12GraphicsCommandList* pCommandList, std::vector<Particle>& particleList)
 {
     unsigned int offset = mParticleCount * sizeof(Particle);
     unsigned int particleCount = (unsigned int)particleList.size();
     unsigned int bytes = particleCount * sizeof(Particle);
 
-    mParticleBuffer->GetInputBuffer()->Write(particleList.data(), bytes, offset);
+    mParticleBuffer->GetInputBuffer()->Write(pCommandList, particleList.data(), bytes, offset);
 
     mParticleCount += particleCount;
 }

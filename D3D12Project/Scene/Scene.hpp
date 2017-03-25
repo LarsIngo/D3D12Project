@@ -13,17 +13,14 @@ class Scene
 
     public:
         // Constructor.
-        // pDevice Pointer to D3D11 device.
-        // pDeviceContext Pointer to D3D11 device context.
-        // maxParticleCount Max number of particles in scene.
-        Scene(/*ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, unsigned int maxParticleCount*/);
+        Scene(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, unsigned int maxParticleCount);
 
         // Destructor.
         ~Scene();
 
         // Adds partilces to scene.
         // particleList Vector of particles to add.
-        void AddParticles(std::vector<Particle>& particleList);
+        void AddParticles(ID3D12GraphicsCommandList* pCommandList, std::vector<Particle>& particleList);
 
     private:
         unsigned int mMaxParticleCount;

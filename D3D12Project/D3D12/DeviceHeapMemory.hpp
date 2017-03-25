@@ -15,6 +15,8 @@ class DeviceHeapMemory
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE GenerateRTV(ID3D12Resource* pResource);
 
+        CD3DX12_CPU_DESCRIPTOR_HANDLE GenerateCBV_SRV_UAV(ID3D12Resource* pResource);
+
     private:
         struct HeapMemory{
             ID3D12DescriptorHeap* mDescriptorHeap;

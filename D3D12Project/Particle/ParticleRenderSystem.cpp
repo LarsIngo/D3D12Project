@@ -41,7 +41,7 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DXGI_FORMAT fo
             nullptr,
             "main",
             "vs_5_0",
-            D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+            0,
             0,
             &vertexShader,
             &errorBuff);
@@ -64,7 +64,7 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DXGI_FORMAT fo
             nullptr,
             "main",
             "gs_5_0",
-            D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+            0, //D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
             0,
             &geometryShader,
             &errorBuff);
@@ -86,7 +86,7 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DXGI_FORMAT fo
             nullptr,
             "main",
             "ps_5_0",
-            D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+            0,
             0,
             &pixelShader,
             &errorBuff);
@@ -98,18 +98,6 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DXGI_FORMAT fo
         pixelShaderBytecode.BytecodeLength = pixelShader->GetBufferSize();
         pixelShaderBytecode.pShaderBytecode = pixelShader->GetBufferPointer();
     }
-
-    //D3D12_INPUT_ELEMENT_DESC inputLayout[] =
-    //{
-    //    { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-    //};
-
-    // fill out an input layout description structure
-    //D3D12_INPUT_LAYOUT_DESC inputLayoutDesc = {};
-
-    //// we can get the number of elements in an array by "sizeof(array) / sizeof(arrayElementType)"
-    //inputLayoutDesc.NumElements = sizeof(inputLayout) / sizeof(D3D12_INPUT_ELEMENT_DESC);
-    //inputLayoutDesc.pInputElementDescs = inputLayout;
 
     DXGI_SAMPLE_DESC sampleDesc;
     sampleDesc.Count = 1;
@@ -164,4 +152,3 @@ void ParticleRenderSystem::Render(ID3D12GraphicsCommandList* pCommandList, Scene
     pCommandList->OMSetRenderTargets(1, &fb->mRTV, FALSE, NULL);
     pCommandList->DrawInstanced(1, 1, 0, 0);
 }
-

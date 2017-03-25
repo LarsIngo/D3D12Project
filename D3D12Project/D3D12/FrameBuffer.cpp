@@ -26,7 +26,7 @@ FrameBuffer::FrameBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMem
         resouceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
         resouceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
         resouceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-        D3D12Tools::CreateResource(mpDevice, resouceDesc, &mResource);
+        D3D12Tools::CreateResource(mpDevice, resouceDesc, D3D12_HEAP_TYPE_DEFAULT, &mResource);
     }
     else
     {
@@ -40,11 +40,6 @@ FrameBuffer::FrameBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMem
 FrameBuffer::~FrameBuffer()
 {
     SAFE_RELEASE(mResource);
-
-    //if (mColTex != nullptr) mColTex->Release();
-    //if (mColSRV != nullptr) mColSRV->Release();
-    //if (mColRTV != nullptr) mColRTV->Release();
-    //if (mColUAV != nullptr) mColUAV->Release();
 }
 
 void FrameBuffer::Clear(ID3D12GraphicsCommandList* pCommandList, float r, float g, float b, float a, float depth)
@@ -75,14 +70,3 @@ void FrameBuffer::TransitionState(ID3D12GraphicsCommandList* pCommandList, D3D12
     D3D12Tools::TransitionState(pCommandList, mResource, mState, newState);
     mState = newState;
 }
-
-//void FrameBuffer::GenerateRTV(ID3D12DescriptorHeap* heapRTV)
-//{
-//    mRTV = CD3DX12_CPU_DESCRIPTOR_HANDLE(heapRTV->GetCPUDescriptorHandleForHeapStart());
-//    //mRTV.Offset(1, mpDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
-//    CD3DX12_CPU_DESCRIPTOR_HANDLE a = mRTV;
-//    mpDevice->CreateRenderTargetView(mResource, nullptr, a);
-//    mRTV.Offset(1, mpDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
-//    CD3DX12_CPU_DESCRIPTOR_HANDLE b = mRTV;
-//    //CD3DX12_CPU_DESCRIPTOR_HANDLE c = CD3DX12_CPU_DESCRIPTOR_HANDLE(heapRTV->GetCPUDescriptorHandleForHeapStart());
-//}

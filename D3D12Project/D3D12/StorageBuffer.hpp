@@ -1,23 +1,22 @@
 #pragma once
 
 #include <d3d12.h>
+#include <d3dx12.h>
+
+class DeviceHeapMemory;
 
 class StorageBuffer
 {
     public:
         // Constructor.
         // pDevice Pointer to D3D11 device.
-        // pDeviceContext Pointer to D3D11 device context.
-        // totalSize Total size in bytes.
-        // stride Stride of each element in bytes.
-        // bindFlags Bind flags. DEFAULT [D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS]
-        StorageBuffer(/*ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, unsigned int totalSize, unsigned int stride, UINT bindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS*/);
+        StorageBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, unsigned int totalSize, unsigned int stride);
 
         // Destructor.
         ~StorageBuffer();
 
         // Copy other storage buffer.
-        void Copy(StorageBuffer* storageBuffer);
+        void Copy(ID3D12GraphicsCommandList* pCommandList, StorageBuffer* storageBuffer);
 
         // Get size of storage buffer.
         // Returns size in bytes.
@@ -31,19 +30,19 @@ class StorageBuffer
         // data Data to write.
         // byteSize Size of data in bytes.
         // off Offset to write data in bytes.
-        void Write(void* data, unsigned int byteSize, unsigned int offset);
+        void Write(ID3D12GraphicsCommandList* pCommandList, void* data, unsigned int byteSize, unsigned int offset);
 
         // Buffer.
-        //ID3D11Buffer* mBuff;
-        //ID3D11ShaderResourceView* mSRV;
-        //ID3D11UnorderedAccessView* mUAV;
+        ID3D12Resource* mBuff;
+        CD3DX12_CPU_DESCRIPTOR_HANDLE mSRV;
+        CD3DX12_CPU_DESCRIPTOR_HANDLE mUAV;
 
     private:
-        //ID3D11Device* mpDevice;
-        //ID3D11DeviceContext* mpDeviceContext;
+        ID3D12Device* mpDevice;
+        DeviceHeapMemory* mpDeviceHeapMemory;
 
         // Staging buffer.
-        //ID3D11Buffer* mStagingBuff;
+        ID3D12Resource* mStagingBuff;
 
         // Storage buffer stride of each element in bytes.
         unsigned int mStride;
