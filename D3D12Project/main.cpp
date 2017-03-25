@@ -99,10 +99,10 @@ int main()
                 //backBuffer->Copy(graphicsCommandList, camera.mpFrameBuffer);
                 backBuffer->TransitionState(graphicsCommandList, D3D12_RESOURCE_STATE_PRESENT);
 
-                renderer.mCommandQueue->Signal(renderer.mGraphicsCompleteFence, renderer.mFrameID + 1);
                 ASSERT(graphicsCommandList->Close(), S_OK);
                 ID3D12CommandList* ppGraphicsCommandLists[] = { graphicsCommandList };
                 renderer.mCommandQueue->ExecuteCommandLists(_countof(ppGraphicsCommandLists), ppGraphicsCommandLists);
+                renderer.mCommandQueue->Signal(renderer.mGraphicsCompleteFence, renderer.mFrameID + 1);
                 // --- RENDER --- //
 
                 // +++ PRESENET +++ //

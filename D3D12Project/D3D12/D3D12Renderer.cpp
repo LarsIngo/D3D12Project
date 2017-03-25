@@ -62,9 +62,9 @@ FrameBuffer* D3D12Renderer::SwapBackBuffer()
 
 void D3D12Renderer::PresentBackBuffer()
 {
-    mCommandQueue->Signal(mPresentCompleteFence, mFrameID + 1);
-
     mSwapChain->Present(0, 0);
+
+    mCommandQueue->Signal(mPresentCompleteFence, mFrameID + 1);
 
     ++mFrameID;
 }
