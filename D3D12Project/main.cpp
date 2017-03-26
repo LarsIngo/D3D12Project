@@ -80,6 +80,8 @@ int main()
         float dt = 0.f;
         float totalTime = 0.f;
         unsigned int frameCount = 0;
+        D3D12Timer gpuComputeTimer(pDevice);
+        D3D12Timer gpuGraphicsTimer(pDevice);
         while (renderer.Running())
         {
             //glm::clamp(dt, 1.f / 6000.f, 1.f / 60.f);
@@ -95,7 +97,8 @@ int main()
                 // +++ RENDER +++ //
                 D3D12Tools::WaitFence(graphicsCompliteFence, renderer.mFrameID, renderer.mSyncEvent);
                 D3D12Tools::ResetGraphicsCommandList(graphicsCommandAllocator, graphicsCommandList);
-                
+                if (gpuProfile) gpuGraphicsTimer.Start(graphicsCommandList);
+
                 FrameBuffer* backBuffer = renderer.SwapBackBuffer();
 
                 backBuffer->TransitionState(graphicsCommandList, D3D12_RESOURCE_STATE_COPY_DEST);
@@ -104,6 +107,7 @@ int main()
                 backBuffer->Copy(graphicsCommandList, camera.mpFrameBuffer);
                 backBuffer->TransitionState(graphicsCommandList, D3D12_RESOURCE_STATE_PRESENT);
 
+                if (gpuProfile) gpuGraphicsTimer.Stop(graphicsCommandList);
                 D3D12Tools::CloseCommandList(graphicsCommandList);
                 D3D12Tools::ExecuteCommandLists(pGraphicsCommandQueue, graphicsCommandList);
                 pGraphicsCommandQueue->Signal(graphicsCompliteFence, renderer.mFrameID + 1);
@@ -119,6 +123,16 @@ int main()
             if (cpuProfile)
             {
                 std::cout << "CPU(Delta time): " << 1000.f * dt << " ms | FPS: " << 1.f / dt << std::endl;
+            }
+            if (gpuProfile)
+            {
+                float computeTime = 1000.f * gpuComputeTimer.GetTime();
+                float graphicsTime = 1000.f * gpuGraphicsTimer.GetTime();
+                std::cout << "GPU(Total) : " << computeTime + graphicsTime << " ms | GPU(Compute): " << computeTime << " ms | GPU(Graphics) : " << graphicsTime << " ms" << std::endl;
+            }
+            if (inputManager.KeyPressed(GLFW_KEY_F3))
+            {
+                std::cout << "CPU(Average delta time) : " << totalTime / frameCount * 1000.f << " ms" << std::endl;
             }
             // --- PROFILING --- //
         }

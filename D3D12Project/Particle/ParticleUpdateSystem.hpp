@@ -7,41 +7,42 @@
 class Scene;
 class StorageBuffer;
 class FrameBuffer;
+class Camera;
+class DeviceHeapMemory;
 
 class ParticleUpdateSystem
 {
     public:
         // Constructor.
-        ParticleUpdateSystem(ID3D12Device* pDevice);
+        ParticleUpdateSystem(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, DXGI_FORMAT format, unsigned int width, unsigned int height);
 
         // Destructor.
         ~ParticleUpdateSystem();
 
-        // Update particles.
-        // pCommandList Command list to update.
-        // scene Scene to update.
-        // dt Delta time.
-        void Update(ID3D12CommandList* pCommandList, Scene* scene, float dt);
+        // Render particles.
+        void Update(ID3D12GraphicsCommandList* pCommandList, Scene* scene, float dt);
+
+        // Pipeline state object.
+        ID3D12PipelineState* mPipeline;
 
     private:
         ID3D12Device* mpDevice;
+        DeviceHeapMemory* mpDeviceHeapMemory;
 
-        //VkShaderModule mComputeShaderModule;
+        DXGI_FORMAT mFormat;
+        unsigned int mWidth;
+        unsigned int mHeight;
 
-        //VkDescriptorPool mPipelineDescriptorPool;
-        //VkDescriptorSet mPipelineDescriptorSet;
-        //VkDescriptorSetLayout mPipelineDescriptorSetLayout;
-        //VkPipelineLayout mPipelineLayout;
-        //VkPipeline mPipeline;
+        ID3D12RootSignature* mRootSignature;
 
-        ID3D12PipelineState* mPipeline;
-        
+        D3D12_VIEWPORT mViewport;
+        D3D12_RECT mScissorRect;
+
         struct MetaData
         {
             float dt;
             unsigned int particleCount;
             float pad[6];
         } mMetaData;
-        //VkBuffer mMetaDataBuffer;
-        //VkDeviceMemory mMetaDataBufferMemory;
+        StorageBuffer* mMetaBuffer;
 };

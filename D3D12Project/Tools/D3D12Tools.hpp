@@ -77,14 +77,6 @@ namespace D3D12Tools
         return commandList;
     }
 
-    // Create graphics command list.
-    inline ID3D12GraphicsCommandList* CreateGraphicsCommandList(ID3D12Device* pDevice, ID3D12CommandAllocator* pCommandAllocator)
-    {
-        ID3D12GraphicsCommandList* commandList;
-        ASSERT(pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, pCommandAllocator, NULL, IID_PPV_ARGS(&commandList)), S_OK);
-        return commandList;
-    }
-
     // Create fence.
     inline ID3D12Fence* CreateFence(ID3D12Device* pDevice)
     {

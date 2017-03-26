@@ -1,89 +1,99 @@
 #pragma once
 
 #include <d3d12.h>
-#include <assert.h>
+#include "D3D12Tools.hpp"
 
 // D3D12 timer.
 class D3D12Timer {
     public:
         // Constructor.
-        D3D12Timer(/*ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext*/)
+        D3D12Timer(ID3D12Device* pDevice)
         {
-            //mpDevice = pDevice;
-            //mpDeviceContext = pDeviceContext;
+            mpDevice = pDevice;
+
             mActive = false;
-            mAccurateTime = false;
             mTime = 0.f;
+            mQueryCount = 2;
 
-            //D3D11_QUERY_DESC desc;
-            //desc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
-            //desc.MiscFlags = 0;
-            //mpDevice->CreateQuery(&desc, &mDisjoint);
+            D3D12_QUERY_HEAP_DESC queryHeapDesc;
+            queryHeapDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
+            queryHeapDesc.NodeMask = 0;
+            queryHeapDesc.Count = mQueryCount;
 
-            //desc.Query = D3D11_QUERY_TIMESTAMP;
-            //mpDevice->CreateQuery(&desc, &mStart);
-            //mpDevice->CreateQuery(&desc, &mStop);
+            ASSERT(mpDevice->CreateQueryHeap(&queryHeapDesc, IID_PPV_ARGS(&mQueryHeap)), S_OK);
+        
+            {
+                D3D12_RESOURCE_DESC resouceDesc;
+                ZeroMemory(&resouceDesc, sizeof(resouceDesc));
+                resouceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+                resouceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+                resouceDesc.Width = sizeof(UINT64) * mQueryCount;
+                resouceDesc.Height = 1;
+                resouceDesc.DepthOrArraySize = 1;
+                resouceDesc.MipLevels = 1;
+                resouceDesc.Format = DXGI_FORMAT_UNKNOWN;
+                resouceDesc.SampleDesc.Count = 1;
+                resouceDesc.SampleDesc.Quality = 0;
+                resouceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+                resouceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+                ASSERT(mpDevice->CreateCommittedResource(
+                    &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+                    D3D12_HEAP_FLAG_NONE,
+                    &resouceDesc,
+                    D3D12_RESOURCE_STATE_COPY_DEST,
+                    nullptr,
+                    IID_PPV_ARGS(&mQueryResource)), S_OK);
+
+                mQueryResource->SetName(L"Query result");
+            }
         }
 
         // Destructor.
         ~D3D12Timer()
         {
-           /* mDisjoint->Release();
-            mStart->Release();
-            mStop->Release();*/
+            mQueryHeap->Release();
+            mQueryResource->Release();
         }
 
         // Start timestamp.
-        void Start()
+        void Start(ID3D12GraphicsCommandList* pCommandList)
         {
-           /* assert(!mActive);
+            assert(!mActive);
             mActive = true;
-            mAccurateTime = false;
 
-            mpDeviceContext->Begin(mDisjoint);
-            mpDeviceContext->End(mStart);*/
+            pCommandList->EndQuery(mQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, 0);
         }
 
         // Stop timestamp.
-        void Stop()
+        void Stop(ID3D12GraphicsCommandList* pCommandList)
         {
-            /*assert(mActive);
+            assert(mActive);
             mActive = false;
 
-            mpDeviceContext->End(mStop);
-            mpDeviceContext->End(mDisjoint);*/
-        }
+            pCommandList->EndQuery(mQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, 1);
 
-        // Stalls CPU/GPU to get results.
-        void CalculateTime()
-        {
-           /* assert(!mActive);
+            // Calculate time.
+            pCommandList->ResolveQueryData(mQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, 0, 2, mQueryResource, 0);
 
-            if (mAccurateTime) return;
+            // Copy to CPU.
+            UINT64 timeStamps[2];
+            {
+                void* mappedResource;
+                CD3DX12_RANGE readRange(0, sizeof(UINT64) * mQueryCount);
+                CD3DX12_RANGE writeRange(0, 0);
+                ASSERT(mQueryResource->Map(0, &readRange, &mappedResource), S_OK);
+                memcpy(&timeStamps, mQueryResource, sizeof(UINT64) * mQueryCount);
+                mQueryResource->Unmap(0, &writeRange);
+            }
 
-            mAccurateTime = true;
-
-            UINT64 startTime = 0;
-            while (mpDeviceContext->GetData(mStart, &startTime, sizeof(startTime), 0) != S_OK);
-
-            UINT64 endTime = 0;
-            while (mpDeviceContext->GetData(mStop, &endTime, sizeof(endTime), 0) != S_OK);
-
-            D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjointData;
-            while (mpDeviceContext->GetData(mDisjoint, &disjointData, sizeof(disjointData), 0) != S_OK);
-
-            assert(disjointData.Disjoint == FALSE);
-
-            UINT64 delta = endTime - startTime;
-            double frequency = static_cast<double>(disjointData.Frequency);
-            mTime = static_cast<float>((delta / frequency));*/
+            UINT64 delta = (timeStamps[1] - timeStamps[0]);
+            mTime = static_cast<float>(delta) / 1000000000;
         }
 
         // Get time from start to stop in seconds.
         float GetTime()
         {
-            if (!mAccurateTime) CalculateTime();
-
             return mTime;
         }
 
@@ -94,12 +104,10 @@ class D3D12Timer {
         }
 
     private:
-        //ID3D11Device* mpDevice;
-        //ID3D11DeviceContext* mpDeviceContext;
-        //ID3D11Query* mDisjoint;
-        //ID3D11Query* mStart;
-        //ID3D11Query* mStop;
+        ID3D12Device* mpDevice;
+        ID3D12QueryHeap* mQueryHeap;
+        ID3D12Resource* mQueryResource;
         bool mActive;
-        bool mAccurateTime;
         float mTime;
+        unsigned int mQueryCount;
 };
