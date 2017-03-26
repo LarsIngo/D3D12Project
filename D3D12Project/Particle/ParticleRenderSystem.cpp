@@ -137,4 +137,6 @@ void ParticleRenderSystem::Render(ID3D12GraphicsCommandList* pCommandList, Scene
     pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
     pCommandList->OMSetRenderTargets(1, &fb->mRTV, FALSE, NULL);
     pCommandList->DrawInstanced(scene->mParticleCount, 1, 0, 0);
+
+    scene->mParticleBuffer->Swap();
 }

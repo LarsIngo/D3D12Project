@@ -47,17 +47,17 @@ StorageBuffer::StorageBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHea
         mSRV = mpDeviceHeapMemory->GenerateSRV(&srcDesc, mBuff);
     }
 
-    //{   // UAV.
-    //    D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-    //    uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-    //    uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-    //    uavDesc.Buffer.FirstElement = 0;
-    //    uavDesc.Buffer.NumElements = mSize / mStride;
-    //    uavDesc.Buffer.StructureByteStride = mStride;
-    //    uavDesc.Buffer.CounterOffsetInBytes = 0;
-    //    uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-    //    mUAV = mpDeviceHeapMemory->GenerateUAV(&uavDesc, mBuff);
-    //}
+    {   // UAV.
+        D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+        uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+        uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+        uavDesc.Buffer.FirstElement = 0;
+        uavDesc.Buffer.NumElements = mSize / mStride;
+        uavDesc.Buffer.StructureByteStride = mStride;
+        uavDesc.Buffer.CounterOffsetInBytes = 0;
+        uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+        mUAV = mpDeviceHeapMemory->GenerateUAV(&uavDesc, mBuff);
+    }
 
     {   // Staging Buffer.
         D3D12_RESOURCE_DESC resouceDesc;
