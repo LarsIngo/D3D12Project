@@ -202,5 +202,5 @@ void ParticleRenderSystem::Render(ID3D12GraphicsCommandList* pCommandList, Scene
     pCommandList->RSSetScissorRects(1, &mScissorRect);
     pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
     pCommandList->OMSetRenderTargets(1, &fb->mRTV, FALSE, NULL);
-    pCommandList->DrawInstanced(1, 1, 0, 0);
+    pCommandList->DrawInstanced(scene->mParticleCount, 1, 0, 0);
 }

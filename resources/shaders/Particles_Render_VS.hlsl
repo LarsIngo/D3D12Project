@@ -10,10 +10,5 @@ StructuredBuffer<Particle> g_Input : register(t0);
 
 Particle main(uint vID : SV_VertexID)
 {
-    Particle p;
-    p.position = float4(0.f, 0.f, 0.f, 0.f);
-    p.velocity = float4(0.f, 0.f, 0.f, 0.f);
-    p.color = g_Input[vID].color;
-    p.scale = float4(1.f, 1.f, 0.f, 0.f);
-    return p;
+    return g_Input[vID];
 }

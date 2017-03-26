@@ -48,12 +48,11 @@ void main(point GSInput input[1], inout TriangleStream<GSOutput> TriStream)
     {
         float x = i == 1 || i == 3;
         float y = i == 0 || i == 1;
-        //output.position.xyz = float3(x, y, 0.f);
         output.position.xyz = worldPosition + paticleSideDirection * (x * 2.f - 1.f) * scale.x + paticleUpDirection * (y * 2.f - 1.f) * scale.y;
         output.position.w = 1.f;
         output.worldPosition = output.position.xyz;
         output.position = mul(output.position, vpMatrix);
-        output.color = lensUpDirection;
+        output.color = color;
         output.uv = float2(x, 1.f - y);
 
         TriStream.Append(output);

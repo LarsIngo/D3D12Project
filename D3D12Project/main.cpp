@@ -37,8 +37,8 @@ int main()
     Camera camera(60.f, &frameBuffer);
     camera.mPosition.z = -5.f;
 
-    int lenX = 2;
-    int lenY = 2;
+    int lenX = 1024;
+    int lenY = 1024;
     Scene scene(device, deviceHeapMemory, lenX * lenY);
     {
         ID3D12GraphicsCommandList* uploadCommandList;
