@@ -13,9 +13,13 @@ class DeviceHeapMemory
         // Destructor.
         ~DeviceHeapMemory();
 
-        CD3DX12_CPU_DESCRIPTOR_HANDLE GenerateRTV(ID3D12Resource* pResource);
+        ID3D12DescriptorHeap* GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE type);
 
-        CD3DX12_CPU_DESCRIPTOR_HANDLE GenerateCBV_SRV_UAV(ID3D12Resource* pResource);
+        CD3DX12_CPU_DESCRIPTOR_HANDLE GenerateRTV(D3D12_RENDER_TARGET_VIEW_DESC* rtvDesc, ID3D12Resource* pResource);
+
+        CD3DX12_CPU_DESCRIPTOR_HANDLE GenerateSRV(D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc, ID3D12Resource* pResource);
+
+        CD3DX12_CPU_DESCRIPTOR_HANDLE GenerateUAV(D3D12_UNORDERED_ACCESS_VIEW_DESC* uavDesc, ID3D12Resource* pResource);
 
     private:
         struct HeapMemory{

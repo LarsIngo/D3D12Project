@@ -12,7 +12,6 @@ FrameBuffer::FrameBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMem
 
     if (pInitResouce == nullptr)
     {
-        // http://stackoverflow.com/questions/35568302/what-is-the-d3d12-equivalent-of-d3d11-createtexture2d
         D3D12_RESOURCE_DESC resouceDesc;
         ZeroMemory(&resouceDesc, sizeof(resouceDesc));
         resouceDesc.MipLevels = 1;
@@ -26,7 +25,15 @@ FrameBuffer::FrameBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMem
         resouceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
         resouceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
         resouceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-        D3D12Tools::CreateResource(mpDevice, resouceDesc, D3D12_HEAP_TYPE_DEFAULT, &mResource);
+        D3D12_CLEAR_VALUE clearValue = {};
+        clearValue.Format = mFormat;
+        ASSERT(mpDevice->CreateCommittedResource(
+            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+            D3D12_HEAP_FLAG_NONE,
+            &resouceDesc,
+            D3D12_RESOURCE_STATE_COMMON,
+            &clearValue,
+            IID_PPV_ARGS(&mResource)), S_OK);
     }
     else
     {
@@ -34,7 +41,7 @@ FrameBuffer::FrameBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMem
     }
 
     mResource->SetName(L"Frame buffer");
-    mRTV = mpDeviceHeapMemory->GenerateRTV(mResource);
+    mRTV = mpDeviceHeapMemory->GenerateRTV(nullptr, mResource);
 }
 
 FrameBuffer::~FrameBuffer()

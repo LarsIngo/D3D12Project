@@ -29,7 +29,7 @@ int main()
     ASSERT(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, renderer.mGraphicsCommandAllocator, NULL, IID_PPV_ARGS(&graphicsCommandList)), S_OK);
     graphicsCommandList->Close();
 
-    ParticleRenderSystem particleRenderSystem(device, renderer.mBackBufferFormat, width, height);
+    ParticleRenderSystem particleRenderSystem(device, deviceHeapMemory, renderer.mBackBufferFormat, width, height);
     
     InputManager inputManager(renderer.mGLFWwindow);
 
@@ -39,7 +39,7 @@ int main()
 
     int lenX = 1024;
     int lenY = 1024;
-    Scene scene; // (device, deviceContext, lenX * lenY);
+    Scene scene(device, deviceHeapMemory, lenX * lenY);
     {
         std::vector<Particle> particleList;
         Particle particle;
@@ -56,7 +56,7 @@ int main()
                 particleList.push_back(particle);
             }
         }
-        scene.AddParticles(particleList);
+        //scene.AddParticles(particleList);
     }
     // --- INIT --- //
 
@@ -89,10 +89,9 @@ int main()
                 FrameBuffer* backBuffer = renderer.SwapBackBuffer();
 
                 backBuffer->TransitionState(graphicsCommandList, D3D12_RESOURCE_STATE_COPY_DEST);
-                camera.mpFrameBuffer = backBuffer; // TMP
-                camera.mpFrameBuffer->Clear(graphicsCommandList, 0.2f, 0.2f, 0.8f);
+                camera.mpFrameBuffer->Clear(graphicsCommandList);
                 particleRenderSystem.Render(graphicsCommandList, &scene, &camera);
-                //backBuffer->Copy(graphicsCommandList, camera.mpFrameBuffer);
+                backBuffer->Copy(graphicsCommandList, camera.mpFrameBuffer);
                 backBuffer->TransitionState(graphicsCommandList, D3D12_RESOURCE_STATE_PRESENT);
 
                 ASSERT(graphicsCommandList->Close(), S_OK);

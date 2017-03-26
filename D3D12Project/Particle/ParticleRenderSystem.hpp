@@ -8,38 +8,29 @@ class Scene;
 class StorageBuffer;
 class FrameBuffer;
 class Camera;
+class DeviceHeapMemory;
 
 class ParticleRenderSystem
 {
     public:
         // Constructor.
-        ParticleRenderSystem(ID3D12Device* pDevice, DXGI_FORMAT format, unsigned int width, unsigned int height);
+        ParticleRenderSystem(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, DXGI_FORMAT format, unsigned int width, unsigned int height);
 
         // Destructor.
         ~ParticleRenderSystem();
 
         // Render particles.
-        // pCommandList Command list to update.
-        // scene Scene to update.
-        // camera Camera to render from.
         void Render(ID3D12GraphicsCommandList* pCommandList, Scene* scene, Camera* camera);
 
         ID3D12PipelineState* mPipeline;
 
     private:
         ID3D12Device* mpDevice;
+        DeviceHeapMemory* mpDeviceHeapMemory;
 
         DXGI_FORMAT mFormat;
         unsigned int mWidth;
         unsigned int mHeight;
-
-        //VkShaderModule mComputeShaderModule;
-
-        //VkDescriptorPool mPipelineDescriptorPool;
-        //VkDescriptorSet mPipelineDescriptorSet;
-        //VkDescriptorSetLayout mPipelineDescriptorSetLayout;
-        //VkPipelineLayout mPipelineLayout;
-        //VkPipeline mPipeline;
 
         ID3D12RootSignature* mRootSignature;
 
@@ -52,6 +43,5 @@ class ParticleRenderSystem
             glm::vec4 lensPosition;
             glm::vec4 lensUpDirection;
         } mMetaData;
-        //VkBuffer mMetaDataBuffer;
-        //VkDeviceMemory mMetaDataBufferMemory;
+        StorageBuffer* mMetaBuffer;
 };

@@ -29,24 +29,8 @@
 
 namespace D3D12Tools
 {
-    // Create Resource
-    void CreateResource(ID3D12Device* pDevice, const D3D12_RESOURCE_DESC& resouceDesc, D3D12_HEAP_TYPE heapType, ID3D12Resource** ppResource);
-
     // TransitionState
     void TransitionState(ID3D12GraphicsCommandList* pCommandList, ID3D12Resource* pResource, D3D12_RESOURCE_STATES oldState, D3D12_RESOURCE_STATES newState);
-
-
-
-    inline void D3D12Tools::CreateResource(ID3D12Device* pDevice, const D3D12_RESOURCE_DESC& resouceDesc, D3D12_HEAP_TYPE heapType, ID3D12Resource** ppResource)
-    {
-        ASSERT(pDevice->CreateCommittedResource(
-            &CD3DX12_HEAP_PROPERTIES(heapType), 
-            D3D12_HEAP_FLAG_NONE,
-            &resouceDesc,
-            D3D12_RESOURCE_STATE_COMMON,
-            nullptr,
-            IID_PPV_ARGS(ppResource)), S_OK);
-    }
 
     inline void D3D12Tools::TransitionState(ID3D12GraphicsCommandList* pCommandList, ID3D12Resource* pResource, D3D12_RESOURCE_STATES oldState, D3D12_RESOURCE_STATES newState)
     {

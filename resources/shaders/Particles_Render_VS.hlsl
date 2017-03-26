@@ -6,7 +6,7 @@ struct Particle
     float4 color : COLOR;
     float4 scale : SCALE;
 };
-//StructuredBuffer<Particle> g_Input : register(t0);
+StructuredBuffer<Particle> g_Input : register(t0);
 
 Particle main(uint vID : SV_VertexID)
 {

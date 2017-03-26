@@ -6,6 +6,7 @@
 
 class StorageSwapBuffer;
 class ParticleSystem;
+class DeviceHeapMemory;
 
 class Scene
 {
@@ -26,7 +27,4 @@ class Scene
         unsigned int mMaxParticleCount;
         unsigned int mParticleCount;
         StorageSwapBuffer* mParticleBuffer;
-
-        //ID3D11Device* mpDevice;
-        //ID3D11DeviceContext* mpDeviceContext;
 };
