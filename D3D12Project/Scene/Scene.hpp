@@ -5,16 +5,18 @@
 #include <d3d12.h>
 
 class StorageSwapBuffer;
-class ParticleSystem;
+class ParticleRenderSystem;
+class ParticleUpdateSystem;
 class DeviceHeapMemory;
 
 class Scene
 {
-    friend ParticleSystem;
+    friend ParticleRenderSystem;
+    friend ParticleUpdateSystem;
 
     public:
         // Constructor.
-        Scene(ID3D12Device* pDevice, unsigned int maxParticleCount);
+        Scene(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, unsigned int maxParticleCount);
 
         // Destructor.
         ~Scene();

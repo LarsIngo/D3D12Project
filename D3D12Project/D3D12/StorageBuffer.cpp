@@ -2,10 +2,10 @@
 #include "DeviceHeapMemory.hpp"
 #include "../Tools/D3D12Tools.hpp"
 
-StorageBuffer::StorageBuffer(ID3D12Device* pDevice, unsigned int totalSize, unsigned int stride)
+StorageBuffer::StorageBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, unsigned int totalSize, unsigned int stride)
 {
     mpDevice = pDevice;
-    mDeviceHeapMemory = new DeviceHeapMemory(mpDevice, 0, 2);
+    mpDeviceHeapMemory = pDeviceHeapMemory;
     mSize = totalSize;
     mStride = stride;
     
@@ -44,7 +44,7 @@ StorageBuffer::StorageBuffer(ID3D12Device* pDevice, unsigned int totalSize, unsi
         srcDesc.Buffer.NumElements = mSize / mStride;
         srcDesc.Buffer.StructureByteStride = mStride;
         srcDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-        mSRV = mDeviceHeapMemory->GenerateSRV(&srcDesc, mBuff);
+        mSRV = mpDeviceHeapMemory->GenerateSRV(&srcDesc, mBuff);
     }
 
     //{   // UAV.
@@ -87,7 +87,6 @@ StorageBuffer::StorageBuffer(ID3D12Device* pDevice, unsigned int totalSize, unsi
 
 StorageBuffer::~StorageBuffer()
 {
-    delete mDeviceHeapMemory;
     SAFE_RELEASE(mBuff);
     SAFE_RELEASE(mStagingBuff);
 }

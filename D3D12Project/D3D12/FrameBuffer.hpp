@@ -11,7 +11,7 @@ class FrameBuffer
     public:
         // Constructor.
         // pDevice Pointer to D3D12 device.
-        FrameBuffer(ID3D12Device* pDevice, unsigned int width, unsigned int height, DXGI_FORMAT format, ID3D12Resource* pInitResouce = nullptr);
+        FrameBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, unsigned int width, unsigned int height, DXGI_FORMAT format, ID3D12Resource* pInitResouce = nullptr);
 
         // Destructor.
         ~FrameBuffer();
@@ -42,5 +42,5 @@ class FrameBuffer
 
     private:
         ID3D12Device* mpDevice;
-        DeviceHeapMemory* mDeviceHeapMemory;
+        DeviceHeapMemory* mpDeviceHeapMemory;
 };

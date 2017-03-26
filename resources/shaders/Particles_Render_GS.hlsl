@@ -24,7 +24,7 @@ struct MetaData
     float4 lensUpDirection;
 };
 // Meta buffer.
-StructuredBuffer<MetaData> g_MetaBuffer : register(t0);
+StructuredBuffer<MetaData> g_MetaBuffer : register(t1);
 
 [maxvertexcount(4)]
 void main(point GSInput input[1], inout TriangleStream<GSOutput> TriStream)

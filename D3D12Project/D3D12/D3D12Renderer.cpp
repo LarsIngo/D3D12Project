@@ -134,6 +134,7 @@ void D3D12Renderer::InitialiseD3D12()
     ASSERT(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&mDevice)), S_OK);
     adapter->Release();
 
+    mDeviceHeapMemory = new DeviceHeapMemory(mDevice, 10, 10);
     
     D3D12_COMMAND_QUEUE_DESC commandQueueDesc;
     commandQueueDesc.Priority = 0;
@@ -177,7 +178,7 @@ void D3D12Renderer::InitialiseD3D12()
     {
         ID3D12Resource* resource;
         mSwapChain->GetBuffer(i, __uuidof(ID3D12Resource), reinterpret_cast<void**>(&resource));
-        mSwapChainFrameBufferList[i] = new FrameBuffer(mDevice, mWinWidth, mWinHeight, mBackBufferFormat, resource);
+        mSwapChainFrameBufferList[i] = new FrameBuffer(mDevice, mDeviceHeapMemory, mWinWidth, mWinHeight, mBackBufferFormat, resource);
     }
         
     ASSERT(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mUploadCommandAllocator)), S_OK);
@@ -205,5 +206,6 @@ void D3D12Renderer::DeInitialiseD3D12()
         delete mSwapChainFrameBufferList[i];
     SAFE_RELEASE(mSwapChain);
     SAFE_RELEASE(mCommandQueue);
+    delete mDeviceHeapMemory;
     SAFE_RELEASE(mDevice);
 }

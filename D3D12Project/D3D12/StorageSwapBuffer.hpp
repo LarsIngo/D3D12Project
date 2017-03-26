@@ -6,7 +6,7 @@ class StorageSwapBuffer
 {
     public:
         // Constructor.
-        StorageSwapBuffer(ID3D12Device* pDevice, unsigned int totalSize, unsigned int stride);
+        StorageSwapBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, unsigned int totalSize, unsigned int stride);
 
         // Destructor.
         ~StorageSwapBuffer();

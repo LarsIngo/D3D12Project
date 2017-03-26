@@ -1,9 +1,9 @@
 #include "StorageSwapBuffer.hpp"
 
-StorageSwapBuffer::StorageSwapBuffer(ID3D12Device* pDevice, unsigned int totalSize, unsigned int stride)
+StorageSwapBuffer::StorageSwapBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, unsigned int totalSize, unsigned int stride)
 {
     for (unsigned int i = 0; i < mBufferCount; ++i)
-        mBuffers[i] = new StorageBuffer(pDevice, totalSize, stride);
+        mBuffers[i] = new StorageBuffer(pDevice, pDeviceHeapMemory, totalSize, stride);
 }
 
 StorageSwapBuffer::~StorageSwapBuffer()

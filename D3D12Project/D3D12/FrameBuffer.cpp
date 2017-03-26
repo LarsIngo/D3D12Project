@@ -2,10 +2,11 @@
 #include "DeviceHeapMemory.hpp"
 #include "../Tools/D3D12Tools.hpp"
 
-FrameBuffer::FrameBuffer(ID3D12Device* pDevice, unsigned int width, unsigned int height, DXGI_FORMAT format, ID3D12Resource* pInitResouce)
+FrameBuffer::FrameBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, unsigned int width, unsigned int height, DXGI_FORMAT format, ID3D12Resource* pInitResouce)
 {
     mpDevice = pDevice;
-    mDeviceHeapMemory = new DeviceHeapMemory(mpDevice, 1, 0);
+    mpDeviceHeapMemory = pDeviceHeapMemory;
+
     mWidth = width;
     mHeight = height;
     mFormat = format;
@@ -45,12 +46,11 @@ FrameBuffer::FrameBuffer(ID3D12Device* pDevice, unsigned int width, unsigned int
     }
 
     mResource->SetName(L"Frame buffer");
-    mRTV = mDeviceHeapMemory->GenerateRTV(nullptr, mResource);
+    mRTV = mpDeviceHeapMemory->GenerateRTV(nullptr, mResource);
 }
 
 FrameBuffer::~FrameBuffer()
 {
-    delete mDeviceHeapMemory;
     SAFE_RELEASE(mResource);
 }
 

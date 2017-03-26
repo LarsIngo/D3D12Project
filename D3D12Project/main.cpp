@@ -23,22 +23,23 @@ int main()
     D3D12Renderer renderer(width, height);
 
     ID3D12Device* device = renderer.mDevice;
+    DeviceHeapMemory* deviceHeapMemory = renderer.mDeviceHeapMemory;
 
     ID3D12GraphicsCommandList* graphicsCommandList;
     ASSERT(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, renderer.mGraphicsCommandAllocator, NULL, IID_PPV_ARGS(&graphicsCommandList)), S_OK);
     ASSERT(graphicsCommandList->Close(), S_OK);
 
-    ParticleRenderSystem particleRenderSystem(device, renderer.mBackBufferFormat, width, height);
+    ParticleRenderSystem particleRenderSystem(device, deviceHeapMemory, renderer.mBackBufferFormat, width, height);
     
     InputManager inputManager(renderer.mGLFWwindow);
 
-    FrameBuffer frameBuffer(device, width, height, renderer.mBackBufferFormat);
+    FrameBuffer frameBuffer(device, deviceHeapMemory, width, height, renderer.mBackBufferFormat);
     Camera camera(60.f, &frameBuffer);
     camera.mPosition.z = -5.f;
 
     int lenX = 2;
     int lenY = 2;
-    Scene scene(device, lenX * lenY);
+    Scene scene(device, deviceHeapMemory, lenX * lenY);
     {
         ID3D12GraphicsCommandList* uploadCommandList;
         ASSERT(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, renderer.mGraphicsCommandAllocator, NULL, IID_PPV_ARGS(&uploadCommandList)), S_OK);

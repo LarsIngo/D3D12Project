@@ -3,15 +3,16 @@
 #include "../Camera/Camera.hpp"
 #include "../D3D12/FrameBuffer.hpp"
 #include "../D3D12/StorageBuffer.hpp"
+#include "../D3D12/StorageSwapBuffer.hpp"
 #include "../D3D12/DeviceHeapMemory.hpp"
 #include "../Tools/D3D12Tools.hpp"
 
 #include <d3dcompiler.h>
 
-ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DXGI_FORMAT format, unsigned int width, unsigned int height)
+ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, DXGI_FORMAT format, unsigned int width, unsigned int height)
 {
     mpDevice = pDevice;
-    //mDeviceHeapMemory = new DeviceHeapMemory(mpDevice, 0, 1);
+    mpDeviceHeapMemory = pDeviceHeapMemory;
 
     mFormat = format;
     mWidth = width;
@@ -33,18 +34,18 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DXGI_FORMAT fo
         //descriptorTable.pDescriptorRanges = &descriptorTableRanges[0]; // the pointer to the beginning of our ranges array
 
         // create a root parameter and fill it out
-        D3D12_ROOT_PARAMETER rootParameters[1]; // only one parameter right now
+        D3D12_ROOT_PARAMETER rootParameters[2]; // only one parameter right now
         //rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
         //rootParameters[0].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
         //rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
         rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
         rootParameters[0].Descriptor.ShaderRegister = 0;
         rootParameters[0].Descriptor.RegisterSpace = 0;
-        rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
-        //rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
-        //rootParameters[2].Descriptor.ShaderRegister = 2;
-        //rootParameters[2].Descriptor.RegisterSpace = 0;
-        //rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+        rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+        rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+        rootParameters[1].Descriptor.ShaderRegister = 1;
+        rootParameters[1].Descriptor.RegisterSpace = 0;
+        rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
         CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
         rootSignatureDesc.Init(_countof(rootParameters), // we have 1 root parameter
@@ -167,12 +168,11 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DXGI_FORMAT fo
     mScissorRect.right = mWidth;
     mScissorRect.bottom = mHeight;
 
-    mMetaBuffer = new StorageBuffer(mpDevice, sizeof(MetaData), sizeof(MetaData));
+    mMetaBuffer = new StorageBuffer(mpDevice, mpDeviceHeapMemory, sizeof(MetaData), sizeof(MetaData));
 }
 
 ParticleRenderSystem::~ParticleRenderSystem()
 {
-    //delete mDeviceHeapMemory;
     delete mMetaBuffer;
     SAFE_RELEASE(mPipeline);
     SAFE_RELEASE(mRootSignature);
@@ -191,14 +191,11 @@ void ParticleRenderSystem::Render(ID3D12GraphicsCommandList* pCommandList, Scene
     pCommandList->SetGraphicsRootSignature(mRootSignature);
 
     // set constant buffer descriptor heap
-    ID3D12DescriptorHeap* pDescriptorHeap = mMetaBuffer->mDeviceHeapMemory->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    ID3D12DescriptorHeap* ppDescriptorHeaps[] = { pDescriptorHeap };
+    ID3D12DescriptorHeap* ppDescriptorHeaps[] = { mpDeviceHeapMemory->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) };
     pCommandList->SetDescriptorHeaps(_countof(ppDescriptorHeaps), ppDescriptorHeaps);
 
-    // set the root descriptor table 0 to the constant buffer descriptor heap
-    //pCommandList->SetGraphicsRootDescriptorTable(0, pDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-
-    pCommandList->SetGraphicsRootShaderResourceView(0, mMetaBuffer->mBuff->GetGPUVirtualAddress()); // TODO
+    pCommandList->SetGraphicsRootShaderResourceView(0, scene->mParticleBuffer->GetOutputBuffer()->mBuff->GetGPUVirtualAddress());
+    pCommandList->SetGraphicsRootShaderResourceView(1, mMetaBuffer->mBuff->GetGPUVirtualAddress());
 
     pCommandList->SetPipelineState(mPipeline);
     pCommandList->RSSetViewports(1, &mViewport);
