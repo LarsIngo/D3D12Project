@@ -14,7 +14,7 @@ class Scene
 
     public:
         // Constructor.
-        Scene(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, unsigned int maxParticleCount);
+        Scene(ID3D12Device* pDevice, unsigned int maxParticleCount);
 
         // Destructor.
         ~Scene();

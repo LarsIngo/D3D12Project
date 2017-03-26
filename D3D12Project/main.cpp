@@ -23,24 +23,26 @@ int main()
     D3D12Renderer renderer(width, height);
 
     ID3D12Device* device = renderer.mDevice;
-    DeviceHeapMemory* deviceHeapMemory = renderer.mDeviceHeapMemory;
 
     ID3D12GraphicsCommandList* graphicsCommandList;
     ASSERT(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, renderer.mGraphicsCommandAllocator, NULL, IID_PPV_ARGS(&graphicsCommandList)), S_OK);
-    graphicsCommandList->Close();
+    ASSERT(graphicsCommandList->Close(), S_OK);
 
-    ParticleRenderSystem particleRenderSystem(device, deviceHeapMemory, renderer.mBackBufferFormat, width, height);
+    ParticleRenderSystem particleRenderSystem(device, renderer.mBackBufferFormat, width, height);
     
     InputManager inputManager(renderer.mGLFWwindow);
 
-    FrameBuffer frameBuffer(device, deviceHeapMemory, width, height, renderer.mBackBufferFormat);
+    FrameBuffer frameBuffer(device, width, height, renderer.mBackBufferFormat);
     Camera camera(60.f, &frameBuffer);
     camera.mPosition.z = -5.f;
 
-    int lenX = 1024;
-    int lenY = 1024;
-    Scene scene(device, deviceHeapMemory, lenX * lenY);
+    int lenX = 2;
+    int lenY = 2;
+    Scene scene(device, lenX * lenY);
     {
+        ID3D12GraphicsCommandList* uploadCommandList;
+        ASSERT(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, renderer.mGraphicsCommandAllocator, NULL, IID_PPV_ARGS(&uploadCommandList)), S_OK);
+
         std::vector<Particle> particleList;
         Particle particle;
         float spaceing = 1.f;
@@ -56,7 +58,20 @@ int main()
                 particleList.push_back(particle);
             }
         }
-        //scene.AddParticles(particleList);
+        scene.AddParticles(uploadCommandList, particleList);
+
+        ASSERT(uploadCommandList->Close(), S_OK);
+        ID3D12CommandList* ppCommandLists[] = { uploadCommandList };
+        renderer.mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+        renderer.mCommandQueue->Signal(renderer.mUploadCompleteFence, 1);
+        if (renderer.mUploadCompleteFence->GetCompletedValue() < 1)
+        {
+            ASSERT(renderer.mUploadCompleteFence->SetEventOnCompletion(1, renderer.mSyncEvent), S_OK);
+            WaitForSingleObject(renderer.mSyncEvent, INFINITE);
+        }
+        ASSERT(renderer.mUploadCommandAllocator->Reset(), S_OK);
+        ASSERT(uploadCommandList->Reset(renderer.mUploadCommandAllocator, nullptr), S_OK);
+        uploadCommandList->Release();
     }
     // --- INIT --- //
 
@@ -89,7 +104,7 @@ int main()
                 FrameBuffer* backBuffer = renderer.SwapBackBuffer();
 
                 backBuffer->TransitionState(graphicsCommandList, D3D12_RESOURCE_STATE_COPY_DEST);
-                camera.mpFrameBuffer->Clear(graphicsCommandList);
+                camera.mpFrameBuffer->Clear(graphicsCommandList, 0.2f, 0.2f, 0.2f, 0.f);
                 particleRenderSystem.Render(graphicsCommandList, &scene, &camera);
                 backBuffer->Copy(graphicsCommandList, camera.mpFrameBuffer);
                 backBuffer->TransitionState(graphicsCommandList, D3D12_RESOURCE_STATE_PRESENT);

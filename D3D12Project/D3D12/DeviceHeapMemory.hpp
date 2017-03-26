@@ -8,7 +8,7 @@ class DeviceHeapMemory
 {
     public:
         // Constructor.
-        DeviceHeapMemory(ID3D12Device* pDevice);
+        DeviceHeapMemory(ID3D12Device* pDevice, unsigned int RTV_COUNT, unsigned int CB_SRV_DSV_UAV_COUNT);
 
         // Destructor.
         ~DeviceHeapMemory();

@@ -10,7 +10,7 @@ class StorageBuffer
     public:
         // Constructor.
         // pDevice Pointer to D3D11 device.
-        StorageBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, unsigned int totalSize, unsigned int stride);
+        StorageBuffer(ID3D12Device* pDevice, unsigned int totalSize, unsigned int stride);
 
         // Destructor.
         ~StorageBuffer();
@@ -37,9 +37,11 @@ class StorageBuffer
         CD3DX12_CPU_DESCRIPTOR_HANDLE mSRV;
         CD3DX12_CPU_DESCRIPTOR_HANDLE mUAV;
 
+        // Device heap memory.
+        DeviceHeapMemory* mDeviceHeapMemory;
+
     private:
         ID3D12Device* mpDevice;
-        DeviceHeapMemory* mpDeviceHeapMemory;
 
         // Staging buffer.
         ID3D12Resource* mStagingBuff;

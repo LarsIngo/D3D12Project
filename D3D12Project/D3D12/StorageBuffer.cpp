@@ -2,10 +2,10 @@
 #include "DeviceHeapMemory.hpp"
 #include "../Tools/D3D12Tools.hpp"
 
-StorageBuffer::StorageBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, unsigned int totalSize, unsigned int stride)
+StorageBuffer::StorageBuffer(ID3D12Device* pDevice, unsigned int totalSize, unsigned int stride)
 {
     mpDevice = pDevice;
-    mpDeviceHeapMemory = pDeviceHeapMemory;
+    mDeviceHeapMemory = new DeviceHeapMemory(mpDevice, 0, 2);
     mSize = totalSize;
     mStride = stride;
     
@@ -44,20 +44,20 @@ StorageBuffer::StorageBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHea
         srcDesc.Buffer.NumElements = mSize / mStride;
         srcDesc.Buffer.StructureByteStride = mStride;
         srcDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-        mSRV = mpDeviceHeapMemory->GenerateSRV(&srcDesc, mBuff);
+        mSRV = mDeviceHeapMemory->GenerateSRV(&srcDesc, mBuff);
     }
 
-    {   // UAV.
-        D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-        uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-        uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-        uavDesc.Buffer.FirstElement = 0;
-        uavDesc.Buffer.NumElements = mSize / mStride;
-        uavDesc.Buffer.StructureByteStride = mStride;
-        uavDesc.Buffer.CounterOffsetInBytes = 0;
-        uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-        mUAV = mpDeviceHeapMemory->GenerateUAV(&uavDesc, mBuff);
-    }
+    //{   // UAV.
+    //    D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+    //    uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+    //    uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+    //    uavDesc.Buffer.FirstElement = 0;
+    //    uavDesc.Buffer.NumElements = mSize / mStride;
+    //    uavDesc.Buffer.StructureByteStride = mStride;
+    //    uavDesc.Buffer.CounterOffsetInBytes = 0;
+    //    uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+    //    mUAV = mpDeviceHeapMemory->GenerateUAV(&uavDesc, mBuff);
+    //}
 
     {   // Staging Buffer.
         D3D12_RESOURCE_DESC resouceDesc;
@@ -87,6 +87,7 @@ StorageBuffer::StorageBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHea
 
 StorageBuffer::~StorageBuffer()
 {
+    delete mDeviceHeapMemory;
     SAFE_RELEASE(mBuff);
     SAFE_RELEASE(mStagingBuff);
 }
@@ -113,11 +114,12 @@ void StorageBuffer::Write(ID3D12GraphicsCommandList* pCommandList, void* data, u
 {
     assert(offset + byteSize <= mSize);
 
-    //D3D12_MAPPED_SUBRESOURCE mappedResource;
-    //ZeroMemory(&mappedResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
-    //DxAssert(mpDeviceContext->Map(mStagingBuff, 0, D3D11_MAP_WRITE, 0, &mappedResource), S_OK);
-    //memcpy(mappedResource.pData, reinterpret_cast<unsigned char*>(data) + offset, byteSize);
-    //mpDeviceContext->Unmap(mStagingBuff, 0);
+    void* mappedResource;
+    CD3DX12_RANGE readRange(0, 0);
+    CD3DX12_RANGE writeRange(offset, offset + byteSize);
+    ASSERT(mStagingBuff->Map(0, &readRange, &mappedResource), S_OK);
+    memcpy(reinterpret_cast<unsigned char*>(mappedResource) + offset, data, byteSize);
+    mStagingBuff->Unmap(0, &writeRange);
 
     pCommandList->CopyResource(mBuff, mStagingBuff);
 }

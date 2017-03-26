@@ -1,12 +1,12 @@
 #include "Scene.hpp"
 #include "../D3D12/StorageSwapBuffer.hpp"
 
-Scene::Scene(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, unsigned int maxParticleCount)
+Scene::Scene(ID3D12Device* pDevice, unsigned int maxParticleCount)
 {
     mParticleCount = 0;
     mMaxParticleCount = maxParticleCount;
 
-    mParticleBuffer = new StorageSwapBuffer(pDevice, pDeviceHeapMemory, sizeof(Particle) * mMaxParticleCount, sizeof(Particle));
+    mParticleBuffer = new StorageSwapBuffer(pDevice, sizeof(Particle) * mMaxParticleCount, sizeof(Particle));
 }
 
 Scene::~Scene()

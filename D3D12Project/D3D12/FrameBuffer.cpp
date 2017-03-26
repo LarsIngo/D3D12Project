@@ -2,10 +2,10 @@
 #include "DeviceHeapMemory.hpp"
 #include "../Tools/D3D12Tools.hpp"
 
-FrameBuffer::FrameBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, unsigned int width, unsigned int height, DXGI_FORMAT format, ID3D12Resource* pInitResouce)
+FrameBuffer::FrameBuffer(ID3D12Device* pDevice, unsigned int width, unsigned int height, DXGI_FORMAT format, ID3D12Resource* pInitResouce)
 {
     mpDevice = pDevice;
-    mpDeviceHeapMemory = pDeviceHeapMemory;
+    mDeviceHeapMemory = new DeviceHeapMemory(mpDevice, 1, 0);
     mWidth = width;
     mHeight = height;
     mFormat = format;
@@ -27,6 +27,10 @@ FrameBuffer::FrameBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMem
         resouceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
         D3D12_CLEAR_VALUE clearValue = {};
         clearValue.Format = mFormat;
+        clearValue.Color[0] = 0.2f;
+        clearValue.Color[1] = 0.2f;
+        clearValue.Color[2] = 0.2f;
+        clearValue.Color[3] = 0.0f;
         ASSERT(mpDevice->CreateCommittedResource(
             &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
             D3D12_HEAP_FLAG_NONE,
@@ -41,11 +45,12 @@ FrameBuffer::FrameBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMem
     }
 
     mResource->SetName(L"Frame buffer");
-    mRTV = mpDeviceHeapMemory->GenerateRTV(nullptr, mResource);
+    mRTV = mDeviceHeapMemory->GenerateRTV(nullptr, mResource);
 }
 
 FrameBuffer::~FrameBuffer()
 {
+    delete mDeviceHeapMemory;
     SAFE_RELEASE(mResource);
 }
 

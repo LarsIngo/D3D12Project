@@ -8,10 +8,10 @@
 
 #include <d3dcompiler.h>
 
-ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, DXGI_FORMAT format, unsigned int width, unsigned int height)
+ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DXGI_FORMAT format, unsigned int width, unsigned int height)
 {
     mpDevice = pDevice;
-    mpDeviceHeapMemory = pDeviceHeapMemory;
+    //mDeviceHeapMemory = new DeviceHeapMemory(mpDevice, 0, 1);
 
     mFormat = format;
     mWidth = width;
@@ -20,7 +20,7 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DeviceHeapMemo
     {
         // create a descriptor range (descriptor table) and fill it out
         // this is a range of descriptors inside a descriptor heap
-        D3D12_DESCRIPTOR_RANGE  descriptorTableRanges[1]; // only one range right now
+        D3D12_DESCRIPTOR_RANGE descriptorTableRanges[1]; // only one range right now
         descriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // this is a range of constant buffer views (descriptors)
         descriptorTableRanges[0].NumDescriptors = 1; // we only have one constant buffer, so the range is only 1
         descriptorTableRanges[0].BaseShaderRegister = 0; // start index of the shader registers in the range
@@ -33,17 +33,24 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DeviceHeapMemo
         descriptorTable.pDescriptorRanges = &descriptorTableRanges[0]; // the pointer to the beginning of our ranges array
 
         // create a root parameter and fill it out
-        D3D12_ROOT_PARAMETER  rootParameters[1]; // only one parameter right now
-        rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; // this is a descriptor table
+        D3D12_ROOT_PARAMETER rootParameters[2]; // only one parameter right now
+        rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
         rootParameters[0].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
-        rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // our pixel shader will be the only shader accessing this parameter for now
-
+        rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+        rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+        rootParameters[1].Descriptor.ShaderRegister = 1;
+        rootParameters[1].Descriptor.RegisterSpace = 0;
+        rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+        //rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+        //rootParameters[2].Descriptor.ShaderRegister = 2;
+        //rootParameters[2].Descriptor.RegisterSpace = 0;
+        //rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
         CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
         rootSignatureDesc.Init(_countof(rootParameters), // we have 1 root parameter
             rootParameters, // a pointer to the beginning of our root parameters array
             0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_NONE);
-        
+
         ID3DBlob* signature;
         HRESULT hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, nullptr);
         if (FAILED(hr))
@@ -160,11 +167,12 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DeviceHeapMemo
     mScissorRect.right = mWidth;
     mScissorRect.bottom = mHeight;
 
-    mMetaBuffer = new StorageBuffer(mpDevice, pDeviceHeapMemory, sizeof(MetaData), sizeof(MetaData));
+    mMetaBuffer = new StorageBuffer(mpDevice, sizeof(MetaData), sizeof(MetaData));
 }
 
 ParticleRenderSystem::~ParticleRenderSystem()
 {
+    //delete mDeviceHeapMemory;
     delete mMetaBuffer;
     SAFE_RELEASE(mPipeline);
     SAFE_RELEASE(mRootSignature);
@@ -175,19 +183,22 @@ void ParticleRenderSystem::Render(ID3D12GraphicsCommandList* pCommandList, Scene
     FrameBuffer* fb = camera->mpFrameBuffer;
     fb->TransitionState(pCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
+    mMetaData.vpMatrix = glm::transpose(camera->mProjectionMatrix * camera->mViewMatrix);
+    mMetaData.lensPosition = glm::vec4(camera->mPosition, 0.f);
+    mMetaData.lensUpDirection = glm::vec4(camera->mUpDirection, 0.f);
     mMetaBuffer->Write(pCommandList, &mMetaData, sizeof(MetaData), 0);
 
     pCommandList->SetGraphicsRootSignature(mRootSignature);
 
     // set constant buffer descriptor heap
-    ID3D12DescriptorHeap* pDescriptorHeap = mpDeviceHeapMemory->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    ID3D12DescriptorHeap* pDescriptorHeap = mMetaBuffer->mDeviceHeapMemory->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     ID3D12DescriptorHeap* ppDescriptorHeaps[] = { pDescriptorHeap };
     pCommandList->SetDescriptorHeaps(_countof(ppDescriptorHeaps), ppDescriptorHeaps);
 
     // set the root descriptor table 0 to the constant buffer descriptor heap
     pCommandList->SetGraphicsRootDescriptorTable(0, pDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
-    pCommandList->SetGraphicsRootShaderResourceView(0, mMetaBuffer->mBuff->GetGPUVirtualAddress()); // TODO
+    pCommandList->SetGraphicsRootShaderResourceView(1, mMetaBuffer->mBuff->GetGPUVirtualAddress()); // TODO
 
     pCommandList->SetPipelineState(mPipeline);
     pCommandList->RSSetViewports(1, &mViewport);

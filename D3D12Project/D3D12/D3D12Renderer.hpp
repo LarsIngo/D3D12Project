@@ -12,7 +12,6 @@
 
 #include <vector>
 class FrameBuffer;
-class DeviceHeapMemory;
 
 class D3D12Renderer
 {
@@ -45,11 +44,11 @@ class D3D12Renderer
         ID3D12Device* mDevice;
         ID3D12CommandQueue* mCommandQueue;
         ID3D12CommandAllocator* mGraphicsCommandAllocator;
-
-        DeviceHeapMemory* mDeviceHeapMemory;
+        ID3D12CommandAllocator* mUploadCommandAllocator;
 
         DXGI_FORMAT mBackBufferFormat;
 
+        ID3D12Fence* mUploadCompleteFence;
         ID3D12Fence* mGraphicsCompleteFence;
         ID3D12Fence* mPresentCompleteFence;
 

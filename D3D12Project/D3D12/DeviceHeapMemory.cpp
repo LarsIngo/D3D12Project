@@ -1,36 +1,41 @@
 #include "DeviceHeapMemory.hpp"
 #include "../Tools/D3D12Tools.hpp"
 
-DeviceHeapMemory::DeviceHeapMemory(ID3D12Device* pDevice)
+DeviceHeapMemory::DeviceHeapMemory(ID3D12Device* pDevice, unsigned int RTV_COUNT, unsigned int CB_SRV_DSV_UAV_COUNT)
 {
     mpDevice = pDevice;
     
     {   // RTV
-        HeapMemory& heapMemory = mHeapMemoryMap[D3D12_DESCRIPTOR_HEAP_TYPE_RTV];
-        heapMemory.mIndex = 0;
-        heapMemory.mMaxCount = 10;
-        D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc;
-        descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-        descriptorHeapDesc.NumDescriptors = heapMemory.mMaxCount;
-        descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-        descriptorHeapDesc.NodeMask = 0;
-        ASSERT(mpDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&heapMemory.mDescriptorHeap)), S_OK);
-        heapMemory.mCPUDescriptorHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(heapMemory.mDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+        if (RTV_COUNT > 0)
+        {
+            HeapMemory& heapMemory = mHeapMemoryMap[D3D12_DESCRIPTOR_HEAP_TYPE_RTV];
+            heapMemory.mIndex = 0;
+            heapMemory.mMaxCount = RTV_COUNT;
+            D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc;
+            descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+            descriptorHeapDesc.NumDescriptors = heapMemory.mMaxCount;
+            descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+            descriptorHeapDesc.NodeMask = 0;
+            ASSERT(mpDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&heapMemory.mDescriptorHeap)), S_OK);
+            heapMemory.mCPUDescriptorHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(heapMemory.mDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+        }
     }
 
     {   // CBV_SRV_UAV
-        HeapMemory& heapMemory = mHeapMemoryMap[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV];
-        heapMemory.mIndex = 0;
-        heapMemory.mMaxCount = 10;
-        D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc;
-        descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        descriptorHeapDesc.NumDescriptors = heapMemory.mMaxCount;
-        descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-        descriptorHeapDesc.NodeMask = 0;
-        ASSERT(mpDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&heapMemory.mDescriptorHeap)), S_OK);
-        heapMemory.mCPUDescriptorHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(heapMemory.mDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+        if (CB_SRV_DSV_UAV_COUNT > 0)
+        {
+            HeapMemory& heapMemory = mHeapMemoryMap[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV];
+            heapMemory.mIndex = 0;
+            heapMemory.mMaxCount = CB_SRV_DSV_UAV_COUNT;
+            D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc;
+            descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+            descriptorHeapDesc.NumDescriptors = heapMemory.mMaxCount;
+            descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+            descriptorHeapDesc.NodeMask = 0;
+            ASSERT(mpDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&heapMemory.mDescriptorHeap)), S_OK);
+            heapMemory.mCPUDescriptorHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(heapMemory.mDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+        }
     }
-    
 }
 
 DeviceHeapMemory::~DeviceHeapMemory()
@@ -51,7 +56,7 @@ CD3DX12_CPU_DESCRIPTOR_HANDLE DeviceHeapMemory::GenerateRTV(D3D12_RENDER_TARGET_
     auto it = mHeapMemoryMap.find(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
     assert(it != mHeapMemoryMap.end());
     HeapMemory& heapMemory = it->second;
-    assert(heapMemory.mIndex + 1 < heapMemory.mMaxCount);
+    assert(heapMemory.mIndex < heapMemory.mMaxCount);
     CD3DX12_CPU_DESCRIPTOR_HANDLE CPUDescriptorHandle = heapMemory.mCPUDescriptorHandle;
     mpDevice->CreateRenderTargetView(pResource, rtvDesc, CPUDescriptorHandle);
     heapMemory.mCPUDescriptorHandle.Offset(1, mpDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
@@ -64,7 +69,7 @@ CD3DX12_CPU_DESCRIPTOR_HANDLE DeviceHeapMemory::GenerateSRV(D3D12_SHADER_RESOURC
     auto it = mHeapMemoryMap.find(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     assert(it != mHeapMemoryMap.end());
     HeapMemory& heapMemory = it->second;
-    assert(heapMemory.mIndex + 1 < heapMemory.mMaxCount);
+    assert(heapMemory.mIndex < heapMemory.mMaxCount);
     CD3DX12_CPU_DESCRIPTOR_HANDLE CPUDescriptorHandle = heapMemory.mCPUDescriptorHandle;
     mpDevice->CreateShaderResourceView(pResource, srvDesc, CPUDescriptorHandle);
     heapMemory.mCPUDescriptorHandle.Offset(1, mpDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
@@ -77,7 +82,7 @@ CD3DX12_CPU_DESCRIPTOR_HANDLE DeviceHeapMemory::GenerateUAV(D3D12_UNORDERED_ACCE
     auto it = mHeapMemoryMap.find(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     assert(it != mHeapMemoryMap.end());
     HeapMemory& heapMemory = it->second;
-    assert(heapMemory.mIndex + 1 < heapMemory.mMaxCount);
+    assert(heapMemory.mIndex < heapMemory.mMaxCount);
     CD3DX12_CPU_DESCRIPTOR_HANDLE CPUDescriptorHandle = heapMemory.mCPUDescriptorHandle;
     mpDevice->CreateUnorderedAccessView(pResource, nullptr, uavDesc, CPUDescriptorHandle);
     heapMemory.mCPUDescriptorHandle.Offset(1, mpDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));

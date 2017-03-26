@@ -8,13 +8,13 @@ class Scene;
 class StorageBuffer;
 class FrameBuffer;
 class Camera;
-class DeviceHeapMemory;
+//class DeviceHeapMemory;
 
 class ParticleRenderSystem
 {
     public:
         // Constructor.
-        ParticleRenderSystem(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, DXGI_FORMAT format, unsigned int width, unsigned int height);
+        ParticleRenderSystem(ID3D12Device* pDevice, DXGI_FORMAT format, unsigned int width, unsigned int height);
 
         // Destructor.
         ~ParticleRenderSystem();
@@ -26,7 +26,7 @@ class ParticleRenderSystem
 
     private:
         ID3D12Device* mpDevice;
-        DeviceHeapMemory* mpDeviceHeapMemory;
+        //DeviceHeapMemory* mDeviceHeapMemory;
 
         DXGI_FORMAT mFormat;
         unsigned int mWidth;
