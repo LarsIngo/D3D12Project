@@ -48,73 +48,14 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DeviceHeapMemo
         }
     }
 
-    D3D12_SHADER_BYTECODE vertexShaderBytecode = {};
-    {
-        
-        ID3DBlob* vertexShader;
-        ID3DBlob* errorBuff;
-        HRESULT hr = D3DCompileFromFile(L"../resources/shaders/Particles_Render_VS.hlsl",
-            nullptr,
-            nullptr,
-            "main",
-            "vs_5_0",
-            0,
-            0,
-            &vertexShader,
-            &errorBuff);
-        if (FAILED(hr))
-        {
-            OutputDebugStringA((char*)errorBuff->GetBufferPointer());
-            assert(0 && "Vertex shader compile error");
-        }
-        vertexShaderBytecode.BytecodeLength = vertexShader->GetBufferSize();
-        vertexShaderBytecode.pShaderBytecode = vertexShader->GetBufferPointer();
-    }
+    D3D12_SHADER_BYTECODE vertexShaderBytecode;
+    D3D12Tools::CompileShader("../resources/shaders/Particles_Render_VS.hlsl", "main", "vs_5_0", vertexShaderBytecode);
 
-    D3D12_SHADER_BYTECODE geometryShaderBytecode = {};
-    {
+    D3D12_SHADER_BYTECODE geometryShaderBytecode;
+    D3D12Tools::CompileShader("../resources/shaders/Particles_Render_GS.hlsl", "main", "gs_5_0", geometryShaderBytecode);
 
-        ID3DBlob* geometryShader;
-        ID3DBlob* errorBuff;
-        HRESULT hr = D3DCompileFromFile(L"../resources/shaders/Particles_Render_GS.hlsl",
-            nullptr,
-            nullptr,
-            "main",
-            "gs_5_0",
-            0, //D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
-            0,
-            &geometryShader,
-            &errorBuff);
-        if (FAILED(hr))
-        {
-            OutputDebugStringA((char*)errorBuff->GetBufferPointer());
-            assert(0 && "Geomery shader compile error");
-        }
-        geometryShaderBytecode.BytecodeLength = geometryShader->GetBufferSize();
-        geometryShaderBytecode.pShaderBytecode = geometryShader->GetBufferPointer();
-    }
-
-    D3D12_SHADER_BYTECODE pixelShaderBytecode = {};
-    {
-        ID3DBlob* pixelShader;
-        ID3DBlob* errorBuff;
-        HRESULT hr = D3DCompileFromFile(L"../resources/shaders/Particles_Render_PS.hlsl",
-            nullptr,
-            nullptr,
-            "main",
-            "ps_5_0",
-            0,
-            0,
-            &pixelShader,
-            &errorBuff);
-        if (FAILED(hr))
-        {
-            OutputDebugStringA((char*)errorBuff->GetBufferPointer());
-            assert(0 && "Pixel shader compile error");
-        }
-        pixelShaderBytecode.BytecodeLength = pixelShader->GetBufferSize();
-        pixelShaderBytecode.pShaderBytecode = pixelShader->GetBufferPointer();
-    }
+    D3D12_SHADER_BYTECODE pixelShaderBytecode;
+    D3D12Tools::CompileShader("../resources/shaders/Particles_Render_PS.hlsl", "main", "ps_5_0", pixelShaderBytecode);
 
     DXGI_SAMPLE_DESC sampleDesc;
     sampleDesc.Count = 1;
@@ -184,7 +125,6 @@ void ParticleRenderSystem::Render(ID3D12GraphicsCommandList* pCommandList, Scene
 
     pCommandList->SetGraphicsRootSignature(mRootSignature);
 
-    // set constant buffer descriptor heap
     ID3D12DescriptorHeap* ppDescriptorHeaps[] = { mpDeviceHeapMemory->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) };
     pCommandList->SetDescriptorHeaps(_countof(ppDescriptorHeaps), ppDescriptorHeaps);
 

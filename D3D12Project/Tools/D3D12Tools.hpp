@@ -29,8 +29,37 @@
 
 namespace D3D12Tools
 {
+    // Comlile shader.
+    void CompileShader(const char* shaderPath, const char* entry, const char* version, D3D12_SHADER_BYTECODE& shader);
+
     // TransitionState
     void TransitionState(ID3D12GraphicsCommandList* pCommandList, ID3D12Resource* pResource, D3D12_RESOURCE_STATES oldState, D3D12_RESOURCE_STATES newState);
+
+
+    inline void D3D12Tools::CompileShader(const char* shaderPath, const char* entry, const char* version, D3D12_SHADER_BYTECODE& shader)
+    {
+        std::string s(shaderPath);
+        std::wstring path(s.begin(), s.end());
+        ID3DBlob* shaderBlob;
+        ID3DBlob* errorBuff;
+        HRESULT hr = D3DCompileFromFile(
+            path.c_str(),
+            nullptr,
+            nullptr,
+            entry,
+            version,
+            0,
+            0,
+            &shaderBlob,
+            &errorBuff);
+        if (FAILED(hr))
+        {
+            OutputDebugStringA((char*)errorBuff->GetBufferPointer());
+            assert(0 && "Vertex shader compile error");
+        }
+        shader.BytecodeLength = shaderBlob->GetBufferSize();
+        shader.pShaderBytecode = shaderBlob->GetBufferPointer();
+    }
 
     inline void D3D12Tools::TransitionState(ID3D12GraphicsCommandList* pCommandList, ID3D12Resource* pResource, D3D12_RESOURCE_STATES oldState, D3D12_RESOURCE_STATES newState)
     {
