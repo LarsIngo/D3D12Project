@@ -19,25 +19,7 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DeviceHeapMemo
     mHeight = height;
 
     {
-        // create a descriptor range (descriptor table) and fill it out
-        // this is a range of descriptors inside a descriptor heap
-        //D3D12_DESCRIPTOR_RANGE descriptorTableRanges[1]; // only one range right now
-        //descriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // this is a range of constant buffer views (descriptors)
-        //descriptorTableRanges[0].NumDescriptors = 1; // we only have one constant buffer, so the range is only 1
-        //descriptorTableRanges[0].BaseShaderRegister = 0; // start index of the shader registers in the range
-        //descriptorTableRanges[0].RegisterSpace = 0; // space 0. can usually be zero
-        //descriptorTableRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; // this appends the range to the end of the root signature descriptor tables
-
-        //// create a descriptor table
-        //D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable;
-        //descriptorTable.NumDescriptorRanges = _countof(descriptorTableRanges); // we only have one range
-        //descriptorTable.pDescriptorRanges = &descriptorTableRanges[0]; // the pointer to the beginning of our ranges array
-
-        // create a root parameter and fill it out
-        D3D12_ROOT_PARAMETER rootParameters[2]; // only one parameter right now
-        //rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
-        //rootParameters[0].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
-        //rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+        D3D12_ROOT_PARAMETER rootParameters[2];
         rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
         rootParameters[0].Descriptor.ShaderRegister = 0;
         rootParameters[0].Descriptor.RegisterSpace = 0;
@@ -48,8 +30,8 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DeviceHeapMemo
         rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
 
         CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-        rootSignatureDesc.Init(_countof(rootParameters), // we have 1 root parameter
-            rootParameters, // a pointer to the beginning of our root parameters array
+        rootSignatureDesc.Init(_countof(rootParameters),
+            rootParameters,
             0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_NONE);
 
         ID3DBlob* signature;
@@ -140,6 +122,18 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DeviceHeapMemo
 
     D3D12_RASTERIZER_DESC rasterizerDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
     D3D12_BLEND_DESC blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    blendDesc.AlphaToCoverageEnable = FALSE;
+    blendDesc.IndependentBlendEnable = TRUE;
+    blendDesc.RenderTarget[0].BlendEnable = TRUE;
+    blendDesc.RenderTarget[0].LogicOpEnable = FALSE;
+    blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+    blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;
+    blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+    blendDesc.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
+    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
     psoDesc.pRootSignature = mRootSignature;
