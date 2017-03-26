@@ -24,7 +24,7 @@ struct MetaData
     float4 lensUpDirection;
 };
 // Meta buffer.
-StructuredBuffer<MetaData> g_MetaBuffer : register(t1);
+StructuredBuffer<MetaData> g_MetaBuffer : register(t0);
 
 [maxvertexcount(4)]
 void main(point GSInput input[1], inout TriangleStream<GSOutput> TriStream)
@@ -48,11 +48,11 @@ void main(point GSInput input[1], inout TriangleStream<GSOutput> TriStream)
     {
         float x = i == 1 || i == 3;
         float y = i == 0 || i == 1;
-        output.position.xyz = float3(x, y, 0.f);
-        //output.position.xyz = worldPosition + paticleSideDirection * (x * 2.f - 1.f) * scale.x + paticleUpDirection * (y * 2.f - 1.f) * scale.y;
+        //output.position.xyz = float3(x, y, 0.f);
+        output.position.xyz = worldPosition + paticleSideDirection * (x * 2.f - 1.f) * scale.x + paticleUpDirection * (y * 2.f - 1.f) * scale.y;
         output.position.w = 1.f;
         output.worldPosition = output.position.xyz;
-        //output.position = mul(output.position, vpMatrix);
+        output.position = mul(output.position, vpMatrix);
         output.color = lensUpDirection;
         output.uv = float2(x, 1.f - y);
 

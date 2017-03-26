@@ -20,27 +20,27 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DXGI_FORMAT fo
     {
         // create a descriptor range (descriptor table) and fill it out
         // this is a range of descriptors inside a descriptor heap
-        D3D12_DESCRIPTOR_RANGE descriptorTableRanges[1]; // only one range right now
-        descriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // this is a range of constant buffer views (descriptors)
-        descriptorTableRanges[0].NumDescriptors = 1; // we only have one constant buffer, so the range is only 1
-        descriptorTableRanges[0].BaseShaderRegister = 0; // start index of the shader registers in the range
-        descriptorTableRanges[0].RegisterSpace = 0; // space 0. can usually be zero
-        descriptorTableRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; // this appends the range to the end of the root signature descriptor tables
+        //D3D12_DESCRIPTOR_RANGE descriptorTableRanges[1]; // only one range right now
+        //descriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // this is a range of constant buffer views (descriptors)
+        //descriptorTableRanges[0].NumDescriptors = 1; // we only have one constant buffer, so the range is only 1
+        //descriptorTableRanges[0].BaseShaderRegister = 0; // start index of the shader registers in the range
+        //descriptorTableRanges[0].RegisterSpace = 0; // space 0. can usually be zero
+        //descriptorTableRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; // this appends the range to the end of the root signature descriptor tables
 
-        // create a descriptor table
-        D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable;
-        descriptorTable.NumDescriptorRanges = _countof(descriptorTableRanges); // we only have one range
-        descriptorTable.pDescriptorRanges = &descriptorTableRanges[0]; // the pointer to the beginning of our ranges array
+        //// create a descriptor table
+        //D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable;
+        //descriptorTable.NumDescriptorRanges = _countof(descriptorTableRanges); // we only have one range
+        //descriptorTable.pDescriptorRanges = &descriptorTableRanges[0]; // the pointer to the beginning of our ranges array
 
         // create a root parameter and fill it out
-        D3D12_ROOT_PARAMETER rootParameters[2]; // only one parameter right now
-        rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
-        rootParameters[0].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
-        rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
-        rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
-        rootParameters[1].Descriptor.ShaderRegister = 1;
-        rootParameters[1].Descriptor.RegisterSpace = 0;
-        rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+        D3D12_ROOT_PARAMETER rootParameters[1]; // only one parameter right now
+        //rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE; // this is a descriptor table
+        //rootParameters[0].DescriptorTable = descriptorTable; // this is our descriptor table for this root parameter
+        //rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // our pixel shader will be the only shader accessing this parameter for now
+        rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+        rootParameters[0].Descriptor.ShaderRegister = 0;
+        rootParameters[0].Descriptor.RegisterSpace = 0;
+        rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
         //rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
         //rootParameters[2].Descriptor.ShaderRegister = 2;
         //rootParameters[2].Descriptor.RegisterSpace = 0;
@@ -196,9 +196,9 @@ void ParticleRenderSystem::Render(ID3D12GraphicsCommandList* pCommandList, Scene
     pCommandList->SetDescriptorHeaps(_countof(ppDescriptorHeaps), ppDescriptorHeaps);
 
     // set the root descriptor table 0 to the constant buffer descriptor heap
-    pCommandList->SetGraphicsRootDescriptorTable(0, pDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+    //pCommandList->SetGraphicsRootDescriptorTable(0, pDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
-    pCommandList->SetGraphicsRootShaderResourceView(1, mMetaBuffer->mBuff->GetGPUVirtualAddress()); // TODO
+    pCommandList->SetGraphicsRootShaderResourceView(0, mMetaBuffer->mBuff->GetGPUVirtualAddress()); // TODO
 
     pCommandList->SetPipelineState(mPipeline);
     pCommandList->RSSetViewports(1, &mViewport);
