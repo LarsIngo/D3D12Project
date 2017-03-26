@@ -22,27 +22,30 @@ int main()
     unsigned int height = 1080 / 2;
     D3D12Renderer renderer(width, height);
 
-    ID3D12Device* device = renderer.mDevice;
-    DeviceHeapMemory* deviceHeapMemory = renderer.mDeviceHeapMemory;
+    ID3D12Device* pDevice = renderer.mDevice;
+    DeviceHeapMemory* pDeviceHeapMemory = renderer.mDeviceHeapMemory;
+    ID3D12CommandQueue* pGraphicsCommandQueue = renderer.mGraphicsCommandQueue;
 
-    ID3D12GraphicsCommandList* graphicsCommandList;
-    ASSERT(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, renderer.mGraphicsCommandAllocator, NULL, IID_PPV_ARGS(&graphicsCommandList)), S_OK);
-    ASSERT(graphicsCommandList->Close(), S_OK);
+    ID3D12CommandAllocator* graphicsCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice);
+    ID3D12GraphicsCommandList* graphicsCommandList = D3D12Tools::CreateGraphicsCommandList(pDevice, graphicsCommandAllocator);
+    D3D12Tools::CloseCommandList(graphicsCommandList);
+    ID3D12Fence* graphicsCompliteFence = D3D12Tools::CreateFence(pDevice);
 
-    ParticleRenderSystem particleRenderSystem(device, deviceHeapMemory, renderer.mBackBufferFormat, width, height);
+    ParticleRenderSystem particleRenderSystem(pDevice, pDeviceHeapMemory, renderer.mBackBufferFormat, width, height);
     
     InputManager inputManager(renderer.mGLFWwindow);
 
-    FrameBuffer frameBuffer(device, deviceHeapMemory, width, height, renderer.mBackBufferFormat);
+    FrameBuffer frameBuffer(pDevice, pDeviceHeapMemory, width, height, renderer.mBackBufferFormat);
     Camera camera(60.f, &frameBuffer);
     camera.mPosition.z = -5.f;
 
     int lenX = 1024;
     int lenY = 1024;
-    Scene scene(device, deviceHeapMemory, lenX * lenY);
+    Scene scene(pDevice, pDeviceHeapMemory, lenX * lenY);
     {
-        ID3D12GraphicsCommandList* uploadCommandList;
-        ASSERT(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, renderer.mGraphicsCommandAllocator, NULL, IID_PPV_ARGS(&uploadCommandList)), S_OK);
+        ID3D12CommandAllocator* uploadCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice);
+        ID3D12GraphicsCommandList* uploadCommandList = D3D12Tools::CreateGraphicsCommandList(pDevice, uploadCommandAllocator);
+        ID3D12Fence* uploadFence = D3D12Tools::CreateFence(pDevice);
 
         std::vector<Particle> particleList;
         Particle particle;
@@ -61,17 +64,13 @@ int main()
         }
         scene.AddParticles(uploadCommandList, particleList);
 
-        ASSERT(uploadCommandList->Close(), S_OK);
-        ID3D12CommandList* ppCommandLists[] = { uploadCommandList };
-        renderer.mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-        renderer.mCommandQueue->Signal(renderer.mUploadCompleteFence, 1);
-        if (renderer.mUploadCompleteFence->GetCompletedValue() < 1)
-        {
-            ASSERT(renderer.mUploadCompleteFence->SetEventOnCompletion(1, renderer.mSyncEvent), S_OK);
-            WaitForSingleObject(renderer.mSyncEvent, INFINITE);
-        }
-        ASSERT(renderer.mUploadCommandAllocator->Reset(), S_OK);
-        ASSERT(uploadCommandList->Reset(renderer.mUploadCommandAllocator, nullptr), S_OK);
+        D3D12Tools::CloseCommandList(uploadCommandList);
+        D3D12Tools::ExecuteCommandLists(pGraphicsCommandQueue, uploadCommandList);
+        pGraphicsCommandQueue->Signal(uploadFence, 1);
+        D3D12Tools::WaitFence(uploadFence, 1, renderer.mSyncEvent);
+
+        uploadCommandAllocator->Release();
+        uploadFence->Release();
         uploadCommandList->Release();
     }
     // --- INIT --- //
@@ -94,13 +93,8 @@ int main()
                 // --- UPDATE --- //
 
                 // +++ RENDER +++ //
-                if (renderer.mGraphicsCompleteFence->GetCompletedValue() < renderer.mFrameID)
-                {
-                    ASSERT(renderer.mGraphicsCompleteFence->SetEventOnCompletion(renderer.mFrameID, renderer.mSyncEvent), S_OK);
-                    WaitForSingleObject(renderer.mSyncEvent, INFINITE);
-                }
-                ASSERT(renderer.mGraphicsCommandAllocator->Reset(), S_OK);
-                ASSERT(graphicsCommandList->Reset(renderer.mGraphicsCommandAllocator, nullptr), S_OK);
+                D3D12Tools::WaitFence(graphicsCompliteFence, renderer.mFrameID, renderer.mSyncEvent);
+                D3D12Tools::ResetGraphicsCommandList(graphicsCommandAllocator, graphicsCommandList);
                 
                 FrameBuffer* backBuffer = renderer.SwapBackBuffer();
 
@@ -110,10 +104,9 @@ int main()
                 backBuffer->Copy(graphicsCommandList, camera.mpFrameBuffer);
                 backBuffer->TransitionState(graphicsCommandList, D3D12_RESOURCE_STATE_PRESENT);
 
-                ASSERT(graphicsCommandList->Close(), S_OK);
-                ID3D12CommandList* ppGraphicsCommandLists[] = { graphicsCommandList };
-                renderer.mCommandQueue->ExecuteCommandLists(_countof(ppGraphicsCommandLists), ppGraphicsCommandLists);
-                renderer.mCommandQueue->Signal(renderer.mGraphicsCompleteFence, renderer.mFrameID + 1);
+                D3D12Tools::CloseCommandList(graphicsCommandList);
+                D3D12Tools::ExecuteCommandLists(pGraphicsCommandQueue, graphicsCommandList);
+                pGraphicsCommandQueue->Signal(graphicsCompliteFence, renderer.mFrameID + 1);
                 // --- RENDER --- //
 
                 // +++ PRESENET +++ //
@@ -133,7 +126,9 @@ int main()
     // --- MAIN LOOP --- //
 
     // +++ SHUTDOWN +++ //
+    graphicsCompliteFence->Release();
     graphicsCommandList->Release();
+    graphicsCommandAllocator->Release();
     // --- SHUTDOWN --- //
 
     return 0;

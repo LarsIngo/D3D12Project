@@ -44,14 +44,10 @@ class D3D12Renderer
         // D3D12.
         ID3D12Device* mDevice;
         DeviceHeapMemory* mDeviceHeapMemory;
-        ID3D12CommandQueue* mCommandQueue;
-        ID3D12CommandAllocator* mGraphicsCommandAllocator;
-        ID3D12CommandAllocator* mUploadCommandAllocator;
+        ID3D12CommandQueue* mGraphicsCommandQueue;
 
         DXGI_FORMAT mBackBufferFormat;
 
-        ID3D12Fence* mUploadCompleteFence;
-        ID3D12Fence* mGraphicsCompleteFence;
         ID3D12Fence* mPresentCompleteFence;
 
         UINT64 mFrameID;

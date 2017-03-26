@@ -46,16 +46,9 @@ FrameBuffer* D3D12Renderer::SwapBackBuffer()
 {
     mActiveSwapchainBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
 
-    UINT64 fenceCompletedValue = mPresentCompleteFence->GetCompletedValue();
-    if (fenceCompletedValue < mFrameID)
-    {
-        ASSERT(mPresentCompleteFence->SetEventOnCompletion(mFrameID, mSyncEvent), S_OK);
-
-        WaitForSingleObject(mSyncEvent, INFINITE);
-    }
+    D3D12Tools::WaitFence(mPresentCompleteFence, mFrameID, mSyncEvent);
 
     assert(mActiveSwapchainBufferIndex <= mSwapChainFrameBufferList.size());
-
     return mSwapChainFrameBufferList[mActiveSwapchainBufferIndex];
 }
 
@@ -64,7 +57,7 @@ void D3D12Renderer::PresentBackBuffer()
 {
     mSwapChain->Present(0, 0);
 
-    mCommandQueue->Signal(mPresentCompleteFence, mFrameID + 1);
+    mGraphicsCommandQueue->Signal(mPresentCompleteFence, mFrameID + 1);
 
     ++mFrameID;
 }
@@ -141,7 +134,7 @@ void D3D12Renderer::InitialiseD3D12()
     commandQueueDesc.NodeMask = 0;
     commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
     commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-    ASSERT(mDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&mCommandQueue)), S_OK);
+    ASSERT(mDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&mGraphicsCommandQueue)), S_OK);
     
     mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     DXGI_MODE_DESC backBufferDesc;
@@ -171,7 +164,7 @@ void D3D12Renderer::InitialiseD3D12()
     swapChainDesc.Flags = 0;
 
     IDXGISwapChain* tmpSwapChain;
-    ASSERT(dxgiFactory->CreateSwapChain(mCommandQueue, &swapChainDesc, &tmpSwapChain), S_OK);
+    ASSERT(dxgiFactory->CreateSwapChain(mGraphicsCommandQueue, &swapChainDesc, &tmpSwapChain), S_OK);
     mSwapChain = static_cast<IDXGISwapChain4*>(tmpSwapChain);
     
     for (std::size_t i = 0; i < mSwapChainFrameBufferList.size(); ++i)
@@ -180,12 +173,7 @@ void D3D12Renderer::InitialiseD3D12()
         mSwapChain->GetBuffer(i, __uuidof(ID3D12Resource), reinterpret_cast<void**>(&resource));
         mSwapChainFrameBufferList[i] = new FrameBuffer(mDevice, mDeviceHeapMemory, mWinWidth, mWinHeight, mBackBufferFormat, resource);
     }
-        
-    ASSERT(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mUploadCommandAllocator)), S_OK);
-    ASSERT(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mGraphicsCommandAllocator)), S_OK);
 
-    ASSERT(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mUploadCompleteFence)), S_OK);
-    ASSERT(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mGraphicsCompleteFence)), S_OK);
     ASSERT(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mPresentCompleteFence)), S_OK);
 
     mSyncEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -198,14 +186,10 @@ void D3D12Renderer::DeInitialiseD3D12()
 {
     CloseHandle(mSyncEvent);
     SAFE_RELEASE(mPresentCompleteFence);
-    SAFE_RELEASE(mGraphicsCompleteFence);
-    SAFE_RELEASE(mUploadCompleteFence);
-    SAFE_RELEASE(mGraphicsCommandAllocator);
-    SAFE_RELEASE(mUploadCommandAllocator);
     for (std::size_t i = 0; i < mSwapChainFrameBufferList.size(); ++i)
         delete mSwapChainFrameBufferList[i];
     SAFE_RELEASE(mSwapChain);
-    SAFE_RELEASE(mCommandQueue);
+    SAFE_RELEASE(mGraphicsCommandQueue);
     delete mDeviceHeapMemory;
     SAFE_RELEASE(mDevice);
 }
