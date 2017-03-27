@@ -51,26 +51,6 @@ ParticleUpdateSystem::ParticleUpdateSystem(ID3D12Device* pDevice, DeviceHeapMemo
     D3D12_SHADER_BYTECODE computeShaderBytecode;
     D3D12Tools::CompileShader("../resources/shaders/Particles_Update_CS.hlsl", "main", "cs_5_0", computeShaderBytecode);
 
-    DXGI_SAMPLE_DESC sampleDesc;
-    sampleDesc.Count = 1;
-    sampleDesc.Quality = 0;
-
-    D3D12_RASTERIZER_DESC rasterizerDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-    D3D12_BLEND_DESC blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-    blendDesc.AlphaToCoverageEnable = FALSE;
-    blendDesc.IndependentBlendEnable = TRUE;
-    blendDesc.RenderTarget[0].BlendEnable = TRUE;
-    blendDesc.RenderTarget[0].LogicOpEnable = FALSE;
-    blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
-    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-    blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;
-    blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
-    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-
-
     D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
     psoDesc.pRootSignature = mRootSignature;
     psoDesc.CS = computeShaderBytecode;

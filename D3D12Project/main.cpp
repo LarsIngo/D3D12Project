@@ -26,7 +26,7 @@ int main()
     ID3D12Device* pDevice = renderer.mDevice;
     DeviceHeapMemory* pDeviceHeapMemory = renderer.mDeviceHeapMemory;
 
-    ID3D12CommandQueue* computeCommandQueue = D3D12Tools::CreateCommandQueue(pDevice, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+    ID3D12CommandQueue* computeCommandQueue = D3D12Tools::CreateCommandQueue(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
     ID3D12CommandAllocator* computeCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice);
     ID3D12GraphicsCommandList* computeCommandList = D3D12Tools::CreateGraphicsCommandList(pDevice, computeCommandAllocator);
     D3D12Tools::CloseCommandList(computeCommandList);
