@@ -6,8 +6,6 @@
 
 class Scene;
 class StorageBuffer;
-class FrameBuffer;
-class Camera;
 class DeviceHeapMemory;
 
 class ParticleUpdateSystem

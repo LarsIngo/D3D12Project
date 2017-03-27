@@ -128,7 +128,7 @@ void ParticleRenderSystem::Render(ID3D12GraphicsCommandList* pCommandList, Scene
     ID3D12DescriptorHeap* ppDescriptorHeaps[] = { mpDeviceHeapMemory->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) };
     pCommandList->SetDescriptorHeaps(_countof(ppDescriptorHeaps), ppDescriptorHeaps);
 
-    scene->mParticleBuffer->GetOutputBuffer()->TransitionState(pCommandList, D3D12_RESOURCE_STATE_COMMON);
+    scene->mParticleBuffer->GetOutputBuffer()->TransitionState(pCommandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     pCommandList->SetGraphicsRootShaderResourceView(0, scene->mParticleBuffer->GetOutputBuffer()->mBuff->GetGPUVirtualAddress());
     pCommandList->SetGraphicsRootShaderResourceView(1, mMetaBuffer->mBuff->GetGPUVirtualAddress());
 

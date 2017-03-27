@@ -1,13 +1,9 @@
 #include "ParticleUpdateSystem.hpp"
 #include "../Scene/Scene.hpp"
-#include "../Camera/Camera.hpp"
-#include "../D3D12/FrameBuffer.hpp"
 #include "../D3D12/StorageBuffer.hpp"
 #include "../D3D12/StorageSwapBuffer.hpp"
 #include "../D3D12/DeviceHeapMemory.hpp"
 #include "../Tools/D3D12Tools.hpp"
-
-#include <d3dcompiler.h>
 
 ParticleUpdateSystem::ParticleUpdateSystem(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory)
 {
@@ -25,7 +21,7 @@ ParticleUpdateSystem::ParticleUpdateSystem(ID3D12Device* pDevice, DeviceHeapMemo
         rootParameters[1].Descriptor.RegisterSpace = 0;
         rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
-        rootParameters[2].Descriptor.ShaderRegister = 2;
+        rootParameters[2].Descriptor.ShaderRegister = 0;
         rootParameters[2].Descriptor.RegisterSpace = 0;
         rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
@@ -81,7 +77,7 @@ void ParticleUpdateSystem::Update(ID3D12GraphicsCommandList* pCommandList, Scene
     pCommandList->SetDescriptorHeaps(_countof(ppDescriptorHeaps), ppDescriptorHeaps);
 
     pCommandList->SetPipelineState(mPipeline);
-    scene->mParticleBuffer->GetInputBuffer()->TransitionState(pCommandList, D3D12_RESOURCE_STATE_COMMON);
+    scene->mParticleBuffer->GetInputBuffer()->TransitionState(pCommandList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     pCommandList->SetComputeRootShaderResourceView(0, scene->mParticleBuffer->GetInputBuffer()->mBuff->GetGPUVirtualAddress());
     pCommandList->SetComputeRootShaderResourceView(1, mMetaBuffer->mBuff->GetGPUVirtualAddress());
     scene->mParticleBuffer->GetOutputBuffer()->TransitionState(pCommandList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);

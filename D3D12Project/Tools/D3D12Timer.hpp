@@ -83,7 +83,7 @@ class D3D12Timer {
                 CD3DX12_RANGE readRange(0, sizeof(UINT64) * mQueryCount);
                 CD3DX12_RANGE writeRange(0, 0);
                 ASSERT(mQueryResource->Map(0, &readRange, &mappedResource), S_OK);
-                memcpy(&timeStamps, mQueryResource, sizeof(UINT64) * mQueryCount);
+                memcpy(&timeStamps, mappedResource, sizeof(UINT64) * mQueryCount);
                 mQueryResource->Unmap(0, &writeRange);
             }
 

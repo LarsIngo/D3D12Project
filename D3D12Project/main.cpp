@@ -109,6 +109,9 @@ int main()
                 D3D12Tools::CloseCommandList(computeCommandList);
                 D3D12Tools::ExecuteCommandLists(computeCommandQueue, computeCommandList);
                 computeCommandQueue->Signal(computeCompliteFence, renderer.mFrameID + 1);
+#ifdef SYNC_COMPUTE_GRAPHICS
+                D3D12Tools::WaitFence(computeCompliteFence, renderer.mFrameID, renderer.mSyncEvent);
+#endif
                 // --- UPDATE --- //
 
                 // +++ RENDER +++ //
@@ -128,6 +131,9 @@ int main()
                 D3D12Tools::CloseCommandList(graphicsCommandList);
                 D3D12Tools::ExecuteCommandLists(pGraphicsCommandQueue, graphicsCommandList);
                 pGraphicsCommandQueue->Signal(graphicsCompliteFence, renderer.mFrameID + 1);
+#ifdef SYNC_COMPUTE_GRAPHICS
+                D3D12Tools::WaitFence(graphicsCompliteFence, renderer.mFrameID, renderer.mSyncEvent);
+#endif
                 // --- RENDER --- //
 
                 // +++ PRESENET +++ //
