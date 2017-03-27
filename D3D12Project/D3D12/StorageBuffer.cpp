@@ -8,6 +8,7 @@ StorageBuffer::StorageBuffer(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHea
     mpDeviceHeapMemory = pDeviceHeapMemory;
     mSize = totalSize;
     mStride = stride;
+    mState = D3D12_RESOURCE_STATE_COMMON;
     
     {   // Buffer.
         D3D12_RESOURCE_DESC resouceDesc;
@@ -113,6 +114,8 @@ void StorageBuffer::Write(ID3D12GraphicsCommandList* pCommandList, void* data, u
 {
     assert(offset + byteSize <= mSize);
 
+    TransitionState(pCommandList, D3D12_RESOURCE_STATE_COPY_DEST);
+
     void* mappedResource;
     CD3DX12_RANGE readRange(0, 0);
     CD3DX12_RANGE writeRange(offset, offset + byteSize);
@@ -121,4 +124,12 @@ void StorageBuffer::Write(ID3D12GraphicsCommandList* pCommandList, void* data, u
     mStagingBuff->Unmap(0, &writeRange);
 
     pCommandList->CopyResource(mBuff, mStagingBuff);
+}
+
+void StorageBuffer::TransitionState(ID3D12GraphicsCommandList* pCommandList, D3D12_RESOURCE_STATES newState)
+{
+    if (mState == newState) return;
+
+    D3D12Tools::TransitionState(pCommandList, mBuff, mState, newState);
+    mState = newState;
 }

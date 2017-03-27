@@ -14,7 +14,7 @@ class ParticleUpdateSystem
 {
     public:
         // Constructor.
-        ParticleUpdateSystem(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, DXGI_FORMAT format, unsigned int width, unsigned int height);
+        ParticleUpdateSystem(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory);
 
         // Destructor.
         ~ParticleUpdateSystem();
@@ -29,14 +29,7 @@ class ParticleUpdateSystem
         ID3D12Device* mpDevice;
         DeviceHeapMemory* mpDeviceHeapMemory;
 
-        DXGI_FORMAT mFormat;
-        unsigned int mWidth;
-        unsigned int mHeight;
-
         ID3D12RootSignature* mRootSignature;
-
-        D3D12_VIEWPORT mViewport;
-        D3D12_RECT mScissorRect;
 
         struct MetaData
         {

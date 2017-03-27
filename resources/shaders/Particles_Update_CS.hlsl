@@ -10,7 +10,7 @@ struct Particle
 StructuredBuffer<Particle> g_InputParticles : register(t0);
 
 // Output particles.
-RWStructuredBuffer<Particle> g_OutputParticles : register(u0);
+RWStructuredBuffer<Particle> g_OutputParticles : register(u2);
 
 // Meta data.
 struct MetaData

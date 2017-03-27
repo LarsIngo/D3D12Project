@@ -9,25 +9,25 @@
 
 #include <d3dcompiler.h>
 
-ParticleUpdateSystem::ParticleUpdateSystem(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory, DXGI_FORMAT format, unsigned int width, unsigned int height)
+ParticleUpdateSystem::ParticleUpdateSystem(ID3D12Device* pDevice, DeviceHeapMemory* pDeviceHeapMemory)
 {
     mpDevice = pDevice;
     mpDeviceHeapMemory = pDeviceHeapMemory;
 
-    mFormat = format;
-    mWidth = width;
-    mHeight = height;
-
     {
-        D3D12_ROOT_PARAMETER rootParameters[2];
+        D3D12_ROOT_PARAMETER rootParameters[3];
         rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
         rootParameters[0].Descriptor.ShaderRegister = 0;
         rootParameters[0].Descriptor.RegisterSpace = 0;
-        rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+        rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
         rootParameters[1].Descriptor.ShaderRegister = 1;
         rootParameters[1].Descriptor.RegisterSpace = 0;
-        rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+        rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
+        rootParameters[2].Descriptor.ShaderRegister = 2;
+        rootParameters[2].Descriptor.RegisterSpace = 0;
+        rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
         CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
         rootSignatureDesc.Init(_countof(rootParameters),
@@ -48,14 +48,8 @@ ParticleUpdateSystem::ParticleUpdateSystem(ID3D12Device* pDevice, DeviceHeapMemo
         }
     }
 
-    D3D12_SHADER_BYTECODE vertexShaderBytecode;
-    D3D12Tools::CompileShader("../resources/shaders/Particles_Render_VS.hlsl", "main", "vs_5_0", vertexShaderBytecode);
-
-    D3D12_SHADER_BYTECODE geometryShaderBytecode;
-    D3D12Tools::CompileShader("../resources/shaders/Particles_Render_GS.hlsl", "main", "gs_5_0", geometryShaderBytecode);
-
-    D3D12_SHADER_BYTECODE pixelShaderBytecode;
-    D3D12Tools::CompileShader("../resources/shaders/Particles_Render_PS.hlsl", "main", "ps_5_0", pixelShaderBytecode);
+    D3D12_SHADER_BYTECODE computeShaderBytecode;
+    D3D12Tools::CompileShader("../resources/shaders/Particles_Update_CS.hlsl", "main", "cs_5_0", computeShaderBytecode);
 
     DXGI_SAMPLE_DESC sampleDesc;
     sampleDesc.Count = 1;
@@ -76,32 +70,14 @@ ParticleUpdateSystem::ParticleUpdateSystem(ID3D12Device* pDevice, DeviceHeapMemo
     blendDesc.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+
+    D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
     psoDesc.pRootSignature = mRootSignature;
-    psoDesc.VS = vertexShaderBytecode;
-    psoDesc.GS = geometryShaderBytecode;
-    psoDesc.PS = pixelShaderBytecode;
-    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-    psoDesc.RTVFormats[0] = mFormat;
-    psoDesc.SampleDesc = sampleDesc;
-    psoDesc.SampleMask = 0xffffffff;
-    psoDesc.RasterizerState = rasterizerDesc;
-    psoDesc.BlendState = blendDesc;
-    psoDesc.NumRenderTargets = 1;
+    psoDesc.CS = computeShaderBytecode;
+    psoDesc.NodeMask = 0;
+    psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
-    ASSERT(mpDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPipeline)), S_OK);
-
-    mViewport.TopLeftX = 0;
-    mViewport.TopLeftY = 0;
-    mViewport.Width = (float)mWidth;
-    mViewport.Height = (float)mHeight;
-    mViewport.MinDepth = 0.0f;
-    mViewport.MaxDepth = 1.0f;
-
-    mScissorRect.left = 0;
-    mScissorRect.top = 0;
-    mScissorRect.right = mWidth;
-    mScissorRect.bottom = mHeight;
+    ASSERT(mpDevice->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&mPipeline)), S_OK);
 
     mMetaBuffer = new StorageBuffer(mpDevice, mpDeviceHeapMemory, sizeof(MetaData), sizeof(MetaData));
 }
@@ -115,28 +91,21 @@ ParticleUpdateSystem::~ParticleUpdateSystem()
 
 void ParticleUpdateSystem::Update(ID3D12GraphicsCommandList* pCommandList, Scene* scene, float dt)
 {
-    FrameBuffer* fb = camera->mpFrameBuffer;
-    fb->TransitionState(pCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
     mMetaData.dt = dt;
     mMetaData.particleCount = scene->mParticleCount;
-    mMetaData.lensUpDirection = glm::vec4(camera->mUpDirection, 0.f);
     mMetaBuffer->Write(pCommandList, &mMetaData, sizeof(MetaData), 0);
 
-    pCommandList->SetGraphicsRootSignature(mRootSignature);
+    pCommandList->SetComputeRootSignature(mRootSignature);
 
     ID3D12DescriptorHeap* ppDescriptorHeaps[] = { mpDeviceHeapMemory->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) };
     pCommandList->SetDescriptorHeaps(_countof(ppDescriptorHeaps), ppDescriptorHeaps);
 
-    pCommandList->SetGraphicsRootShaderResourceView(0, scene->mParticleBuffer->GetOutputBuffer()->mBuff->GetGPUVirtualAddress());
-    pCommandList->SetGraphicsRootShaderResourceView(1, mMetaBuffer->mBuff->GetGPUVirtualAddress());
-
     pCommandList->SetPipelineState(mPipeline);
-    pCommandList->RSSetViewports(1, &mViewport);
-    pCommandList->RSSetScissorRects(1, &mScissorRect);
-    pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
-    pCommandList->OMSetRenderTargets(1, &fb->mRTV, FALSE, NULL);
-    pCommandList->DrawInstanced(scene->mParticleCount, 1, 0, 0);
+    scene->mParticleBuffer->GetInputBuffer()->TransitionState(pCommandList, D3D12_RESOURCE_STATE_COMMON);
+    pCommandList->SetComputeRootShaderResourceView(0, scene->mParticleBuffer->GetInputBuffer()->mBuff->GetGPUVirtualAddress());
+    pCommandList->SetComputeRootShaderResourceView(1, mMetaBuffer->mBuff->GetGPUVirtualAddress());
+    scene->mParticleBuffer->GetOutputBuffer()->TransitionState(pCommandList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    pCommandList->SetComputeRootUnorderedAccessView(2, scene->mParticleBuffer->GetOutputBuffer()->mBuff->GetGPUVirtualAddress());
 
-    scene->mParticleBuffer->Swap();
+    pCommandList->Dispatch(static_cast<unsigned int>(ceil(scene->mParticleCount / 256.f)), 1, 1);
 }

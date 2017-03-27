@@ -32,7 +32,13 @@ class StorageBuffer
         // off Offset to write data in bytes.
         void Write(ID3D12GraphicsCommandList* pCommandList, void* data, unsigned int byteSize, unsigned int offset);
 
+        // Transition state.
+        // commandList Command buffer to make transition
+        // newState State to transition to.
+        void TransitionState(ID3D12GraphicsCommandList* pCommandList, D3D12_RESOURCE_STATES newState);
+
         // Buffer.
+        D3D12_RESOURCE_STATES mState;
         ID3D12Resource* mBuff;
         CD3DX12_CPU_DESCRIPTOR_HANDLE mSRV;
         CD3DX12_CPU_DESCRIPTOR_HANDLE mUAV;

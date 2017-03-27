@@ -76,8 +76,7 @@ void FrameBuffer::Copy(ID3D12GraphicsCommandList* pCommandList, FrameBuffer* fb)
 
 void FrameBuffer::TransitionState(ID3D12GraphicsCommandList* pCommandList, D3D12_RESOURCE_STATES newState)
 {
-    if (mState == newState)
-        return;
+    if (mState == newState) return;
 
     D3D12Tools::TransitionState(pCommandList, mResource, mState, newState);
     mState = newState;

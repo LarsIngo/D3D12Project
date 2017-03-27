@@ -129,12 +129,7 @@ void D3D12Renderer::InitialiseD3D12()
 
     mDeviceHeapMemory = new DeviceHeapMemory(mDevice, 10, 10);
     
-    D3D12_COMMAND_QUEUE_DESC commandQueueDesc;
-    commandQueueDesc.Priority = 0;
-    commandQueueDesc.NodeMask = 0;
-    commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-    commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-    ASSERT(mDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&mGraphicsCommandQueue)), S_OK);
+    mGraphicsCommandQueue = D3D12Tools::CreateCommandQueue(mDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
     
     mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     DXGI_MODE_DESC backBufferDesc;

@@ -6,6 +6,7 @@
 #include "Tools/D3D12Timer.hpp"
 #include "Tools/D3D12Tools.hpp"
 #include "D3D12/FrameBuffer.hpp"
+#include "Particle/ParticleUpdateSystem.hpp"
 #include "Particle/ParticleRenderSystem.hpp"
 #include "Scene/Scene.hpp"
 #include "Camera/Camera.hpp"
@@ -24,13 +25,20 @@ int main()
 
     ID3D12Device* pDevice = renderer.mDevice;
     DeviceHeapMemory* pDeviceHeapMemory = renderer.mDeviceHeapMemory;
-    ID3D12CommandQueue* pGraphicsCommandQueue = renderer.mGraphicsCommandQueue;
 
+    ID3D12CommandQueue* computeCommandQueue = D3D12Tools::CreateCommandQueue(pDevice, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+    ID3D12CommandAllocator* computeCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice);
+    ID3D12GraphicsCommandList* computeCommandList = D3D12Tools::CreateGraphicsCommandList(pDevice, computeCommandAllocator);
+    D3D12Tools::CloseCommandList(computeCommandList);
+    ID3D12Fence* computeCompliteFence = D3D12Tools::CreateFence(pDevice);
+
+    ID3D12CommandQueue* pGraphicsCommandQueue = renderer.mGraphicsCommandQueue;
     ID3D12CommandAllocator* graphicsCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice);
     ID3D12GraphicsCommandList* graphicsCommandList = D3D12Tools::CreateGraphicsCommandList(pDevice, graphicsCommandAllocator);
     D3D12Tools::CloseCommandList(graphicsCommandList);
     ID3D12Fence* graphicsCompliteFence = D3D12Tools::CreateFence(pDevice);
 
+    ParticleUpdateSystem particleUpdateSystem(pDevice, pDeviceHeapMemory);
     ParticleRenderSystem particleRenderSystem(pDevice, pDeviceHeapMemory, renderer.mBackBufferFormat, width, height);
     
     InputManager inputManager(renderer.mGLFWwindow);
@@ -90,8 +98,17 @@ int main()
             {
                 CPUTIMER(dt);
                 // +++ UPDATE +++ //
+                D3D12Tools::WaitFence(computeCompliteFence, renderer.mFrameID, renderer.mSyncEvent);
+                D3D12Tools::ResetGraphicsCommandList(computeCommandAllocator, computeCommandList);
+                if (gpuProfile) gpuComputeTimer.Start(computeCommandList);
+
                 camera.Update(20.f, 2.f, dt, &inputManager);
-                //particleSystem.Update(&scene, dt);
+                particleUpdateSystem.Update(computeCommandList, &scene, dt);
+
+                if (gpuProfile) gpuComputeTimer.Stop(computeCommandList);
+                D3D12Tools::CloseCommandList(computeCommandList);
+                D3D12Tools::ExecuteCommandLists(computeCommandQueue, computeCommandList);
+                computeCommandQueue->Signal(computeCompliteFence, renderer.mFrameID + 1);
                 // --- UPDATE --- //
 
                 // +++ RENDER +++ //
@@ -140,6 +157,11 @@ int main()
     // --- MAIN LOOP --- //
 
     // +++ SHUTDOWN +++ //
+    computeCompliteFence->Release();
+    computeCommandList->Release();
+    computeCommandAllocator->Release();
+    computeCommandQueue->Release();
+
     graphicsCompliteFence->Release();
     graphicsCommandList->Release();
     graphicsCommandAllocator->Release();

@@ -61,6 +61,18 @@ namespace D3D12Tools
         pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pResource, oldState, newState));
     }
 
+    inline ID3D12CommandQueue* CreateCommandQueue(ID3D12Device* pDevice, D3D12_COMMAND_LIST_TYPE type)
+    {
+        ID3D12CommandQueue* commandQueue;
+        D3D12_COMMAND_QUEUE_DESC commandQueueDesc;
+        commandQueueDesc.Priority = 0;
+        commandQueueDesc.NodeMask = 0;
+        commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+        commandQueueDesc.Type = type;
+        ASSERT(pDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue)), S_OK);
+        return commandQueue;
+    }
+
     // Create command allocator.
     inline ID3D12CommandAllocator* CreateCommandAllocator(ID3D12Device* pDevice)
     {
