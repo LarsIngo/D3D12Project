@@ -35,21 +35,19 @@ void main(uint3 threadID : SV_DispatchThreadID)
         Particle self = g_InputParticles[tID];
         self.position.xyz = self.position.xyz + self.velocity.xyz * dt;
         
-        /*
         uint intersectCount = 0;
         for (uint pID = 0; pID < particleCount; ++pID)
         {
             if (tID != pID)
             {
                 Particle other = g_InputParticles[pID];
-                if (length(other.position - self.position) < 2.f)
+                if (length(other.position - self.position) < 1.f)
                 {
                     ++intersectCount;
                 }                
             }
         }
-        self.color = float4(intersectCount / 20.f, 1.f, 0.f, 0.f);
-        */
+        self.color = float4(intersectCount / 10.f, 1.f, 0.f, 0.f);
         
         g_OutputParticles[tID] = self;
     }

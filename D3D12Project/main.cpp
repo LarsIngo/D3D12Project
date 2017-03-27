@@ -47,8 +47,8 @@ int main()
     Camera camera(60.f, &frameBuffer);
     camera.mPosition.z = -5.f;
 
-    int lenX = 1024;
-    int lenY = 1024;
+    int lenX = 256;
+    int lenY = 256;
     Scene scene(pDevice, pDeviceHeapMemory, lenX * lenY);
     {
         ID3D12CommandAllocator* uploadCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice);
