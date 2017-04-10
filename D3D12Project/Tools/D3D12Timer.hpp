@@ -96,19 +96,14 @@ class D3D12Timer {
         }
 
         // Get time from start to stop in nano seconds.
-        unsigned int GetDeltaTime()
+        UINT64 GetDeltaTime()
         {
-            return static_cast<unsigned int>(mDeltaTime);
+            return mDeltaTime;
         }
 
-        unsigned int GetBeginTime()
+        UINT64 GetBeginTime()
         {
-            return static_cast<unsigned int>(mBeginTime);
-        }
-
-        unsigned int GetEndTime()
-        {
-            return static_cast<unsigned int>(mEndTime);
+            return mBeginTime;
         }
 
         // Whether timer is active.

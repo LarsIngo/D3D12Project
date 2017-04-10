@@ -151,6 +151,9 @@ int main()
             }
             if (gpuProfile)
             {
+                // Wait complete.
+                D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID, renderer.mSyncEvent);
+                D3D12Tools::WaitFence(graphicsCompleteFence, renderer.mFrameID, renderer.mSyncEvent);
                 // Get timestamps.
                 float computeTime = 1.f / 1000000.f * gpuComputeTimer.GetDeltaTime();
                 float graphicsTime = 1.f / 1000000.f * gpuGraphicsTimer.GetDeltaTime();

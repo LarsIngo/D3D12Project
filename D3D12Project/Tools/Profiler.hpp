@@ -33,7 +33,7 @@ class Profiler {
 
         }
 
-        void Rectangle( int x, int y, unsigned int width, unsigned int height,
+        void Rectangle( UINT64 x, UINT64 y, UINT64 width, UINT64 height,
             float r, float g, float b)
         {
             mFileStream << "rectangle('Position', [" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(width) + ", " + std::to_string(height) + "], 'FaceColor', [" + std::to_string(r) + " " + std::to_string(g) + " " + std::to_string(b) + "]);\n";
