@@ -5,6 +5,7 @@
 #include "Tools/CPUTimer.hpp"
 #include "Tools/D3D12Timer.hpp"
 #include "Tools/D3D12Tools.hpp"
+#include "Tools/Profiler.hpp"
 #include "D3D12/FrameBuffer.hpp"
 #include "Particle/ParticleUpdateSystem.hpp"
 #include "Particle/ParticleRenderSystem.hpp"
@@ -30,13 +31,13 @@ int main()
     ID3D12CommandAllocator* computeCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice);
     ID3D12GraphicsCommandList* computeCommandList = D3D12Tools::CreateGraphicsCommandList(pDevice, computeCommandAllocator);
     D3D12Tools::CloseCommandList(computeCommandList);
-    ID3D12Fence* computeCompliteFence = D3D12Tools::CreateFence(pDevice);
+    ID3D12Fence* computeCompleteFence = D3D12Tools::CreateFence(pDevice);
 
     ID3D12CommandQueue* pGraphicsCommandQueue = renderer.mGraphicsCommandQueue;
     ID3D12CommandAllocator* graphicsCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice);
     ID3D12GraphicsCommandList* graphicsCommandList = D3D12Tools::CreateGraphicsCommandList(pDevice, graphicsCommandAllocator);
     D3D12Tools::CloseCommandList(graphicsCommandList);
-    ID3D12Fence* graphicsCompliteFence = D3D12Tools::CreateFence(pDevice);
+    ID3D12Fence* graphicsCompleteFence = D3D12Tools::CreateFence(pDevice);
 
     ParticleUpdateSystem particleUpdateSystem(pDevice, pDeviceHeapMemory);
     ParticleRenderSystem particleRenderSystem(pDevice, pDeviceHeapMemory, renderer.mBackBufferFormat, width, height);
@@ -57,14 +58,14 @@ int main()
 
         std::vector<Particle> particleList;
         Particle particle;
-        float spaceing = 1.f;
+        float spacing = 1.f;
         float speed = 0.1f;
-        particle.scale = glm::vec4(spaceing / 2.f, spaceing / 2.f, 0.f, 0.f);
+        particle.scale = glm::vec4(spacing / 2.f, spacing / 2.f, 0.f, 0.f);
         for (int y = 0; y < lenY; ++y)
         {
             for (int x = 0; x < lenX; ++x)
             {
-                particle.position = glm::vec4(x * spaceing, y * spaceing, 0.f, 0.f);
+                particle.position = glm::vec4(x * spacing, y * spacing, 0.f, 0.f);
                 particle.velocity = -glm::normalize(particle.position + glm::vec4(speed, speed, 0.f, 0.f));
                 particle.color = glm::vec4((float)y / lenY, 0.7f, 1.f - (float)x / lenX, 1.f);
                 particleList.push_back(particle);
@@ -90,6 +91,7 @@ int main()
         unsigned int frameCount = 0;
         D3D12Timer gpuComputeTimer(pDevice);
         D3D12Timer gpuGraphicsTimer(pDevice);
+        Profiler profiler(1600, 200);
         while (renderer.Running())
         {
             //glm::clamp(dt, 1.f / 6000.f, 1.f / 60.f);
@@ -98,7 +100,7 @@ int main()
             {
                 CPUTIMER(dt);
                 // +++ UPDATE +++ //
-                D3D12Tools::WaitFence(computeCompliteFence, renderer.mFrameID, renderer.mSyncEvent);
+                D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID, renderer.mSyncEvent);
                 D3D12Tools::ResetGraphicsCommandList(computeCommandAllocator, computeCommandList);
                 if (gpuProfile) gpuComputeTimer.Start(computeCommandList);
 
@@ -108,14 +110,14 @@ int main()
                 if (gpuProfile) gpuComputeTimer.Stop(computeCommandList);
                 D3D12Tools::CloseCommandList(computeCommandList);
                 D3D12Tools::ExecuteCommandLists(computeCommandQueue, computeCommandList);
-                computeCommandQueue->Signal(computeCompliteFence, renderer.mFrameID + 1);
+                computeCommandQueue->Signal(computeCompleteFence, renderer.mFrameID + 1);
 #ifdef SYNC_COMPUTE_GRAPHICS
-                D3D12Tools::WaitFence(computeCompliteFence, renderer.mFrameID, renderer.mSyncEvent);
+                D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID, renderer.mSyncEvent);
 #endif
                 // --- UPDATE --- //
 
                 // +++ RENDER +++ //
-                D3D12Tools::WaitFence(graphicsCompliteFence, renderer.mFrameID, renderer.mSyncEvent);
+                D3D12Tools::WaitFence(graphicsCompleteFence, renderer.mFrameID, renderer.mSyncEvent);
                 D3D12Tools::ResetGraphicsCommandList(graphicsCommandAllocator, graphicsCommandList);
                 if (gpuProfile) gpuGraphicsTimer.Start(graphicsCommandList);
 
@@ -130,9 +132,9 @@ int main()
                 if (gpuProfile) gpuGraphicsTimer.Stop(graphicsCommandList);
                 D3D12Tools::CloseCommandList(graphicsCommandList);
                 D3D12Tools::ExecuteCommandLists(pGraphicsCommandQueue, graphicsCommandList);
-                pGraphicsCommandQueue->Signal(graphicsCompliteFence, renderer.mFrameID + 1);
+                pGraphicsCommandQueue->Signal(graphicsCompleteFence, renderer.mFrameID + 1);
 #ifdef SYNC_COMPUTE_GRAPHICS
-                D3D12Tools::WaitFence(graphicsCompliteFence, renderer.mFrameID, renderer.mSyncEvent);
+                D3D12Tools::WaitFence(graphicsCompleteFence, renderer.mFrameID, renderer.mSyncEvent);
 #endif
                 // --- RENDER --- //
 
@@ -149,9 +151,12 @@ int main()
             }
             if (gpuProfile)
             {
-                float computeTime = 1000.f * gpuComputeTimer.GetTime();
-                float graphicsTime = 1000.f * gpuGraphicsTimer.GetTime();
+                // Get timestamps.
+                float computeTime = 1.f / 1000000.f * gpuComputeTimer.GetDeltaTime();
+                float graphicsTime = 1.f / 1000000.f * gpuGraphicsTimer.GetDeltaTime();
                 std::cout << "GPU(Total) : " << computeTime + graphicsTime << " ms | GPU(Compute): " << computeTime << " ms | GPU(Graphics) : " << graphicsTime << " ms" << std::endl;
+                profiler.Rectangle(gpuComputeTimer.GetBeginTime(), 1, gpuComputeTimer.GetDeltaTime(), 1, 0.f, 0.f, 1.f);
+                profiler.Rectangle(gpuGraphicsTimer.GetBeginTime(), 0, gpuGraphicsTimer.GetDeltaTime(), 1, 0.f, 1.f, 0.f);
             }
             if (inputManager.KeyPressed(GLFW_KEY_F3))
             {
@@ -163,12 +168,12 @@ int main()
     // --- MAIN LOOP --- //
 
     // +++ SHUTDOWN +++ //
-    computeCompliteFence->Release();
+    computeCompleteFence->Release();
     computeCommandList->Release();
     computeCommandAllocator->Release();
     computeCommandQueue->Release();
 
-    graphicsCompliteFence->Release();
+    graphicsCompleteFence->Release();
     graphicsCommandList->Release();
     graphicsCommandAllocator->Release();
     // --- SHUTDOWN --- //

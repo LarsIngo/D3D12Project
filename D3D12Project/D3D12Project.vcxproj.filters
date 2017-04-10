@@ -95,5 +95,8 @@
     <ClInclude Include="Particle\ParticleUpdateSystem.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Tools\Profiler.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

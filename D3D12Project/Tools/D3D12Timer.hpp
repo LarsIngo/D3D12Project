@@ -12,7 +12,9 @@ class D3D12Timer {
             mpDevice = pDevice;
 
             mActive = false;
-            mTime = 0.f;
+            mDeltaTime = 0;
+            mBeginTime = 0;
+            mEndTime = 0;
             mQueryCount = 2;
 
             D3D12_QUERY_HEAP_DESC queryHeapDesc;
@@ -87,14 +89,26 @@ class D3D12Timer {
                 mQueryResource->Unmap(0, &writeRange);
             }
 
-            UINT64 delta = (timeStamps[1] - timeStamps[0]);
-            mTime = static_cast<float>(delta) / 1000000000;
+            mBeginTime = timeStamps[0];
+            mEndTime = timeStamps[1];
+
+            mDeltaTime = mEndTime - mBeginTime;
         }
 
-        // Get time from start to stop in seconds.
-        float GetTime()
+        // Get time from start to stop in nano seconds.
+        unsigned int GetDeltaTime()
         {
-            return mTime;
+            return static_cast<unsigned int>(mDeltaTime);
+        }
+
+        unsigned int GetBeginTime()
+        {
+            return static_cast<unsigned int>(mBeginTime);
+        }
+
+        unsigned int GetEndTime()
+        {
+            return static_cast<unsigned int>(mEndTime);
         }
 
         // Whether timer is active.
@@ -108,6 +122,8 @@ class D3D12Timer {
         ID3D12QueryHeap* mQueryHeap;
         ID3D12Resource* mQueryResource;
         bool mActive;
-        float mTime;
+        UINT64 mDeltaTime;
+        UINT64 mBeginTime;
+        UINT64 mEndTime;
         unsigned int mQueryCount;
 };

@@ -185,6 +185,7 @@
     <ClInclude Include="Tools\CPUTimer.hpp" />
     <ClInclude Include="Tools\D3D12Timer.hpp" />
     <ClInclude Include="Tools\D3D12Tools.hpp" />
+    <ClInclude Include="Tools\Profiler.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
