@@ -104,9 +104,9 @@ namespace D3D12Tools
     }
 
     // Execute command list.
-    inline void ExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, ID3D12CommandList* commandList)
+    inline void ExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, ID3D12CommandList* pCommandList)
     {
-        ID3D12CommandList* ppCommandLists[] = { commandList  };
+        ID3D12CommandList* ppCommandLists[] = { pCommandList };
         pCommandQueue->ExecuteCommandLists(1, ppCommandLists);
     }
 
@@ -121,10 +121,10 @@ namespace D3D12Tools
     }
 
     // Reset command list and command allocator.
-    inline void ResetGraphicsCommandList(ID3D12CommandAllocator* pCommandAllocator, ID3D12GraphicsCommandList* pGraphicsCommandList)
+    inline void ResetCommandList(ID3D12CommandAllocator* pCommandAllocator, ID3D12GraphicsCommandList* pCommandList)
     {
         ASSERT(pCommandAllocator->Reset(), S_OK);
-        ASSERT(pGraphicsCommandList->Reset(pCommandAllocator, nullptr), S_OK);
+        ASSERT(pCommandList->Reset(pCommandAllocator, nullptr), S_OK);
     }
 
 }

@@ -32,14 +32,19 @@ int main()
     ID3D12GraphicsCommandList* computeCommandList = D3D12Tools::CreateCommandList(pDevice, computeCommandAllocator, D3D12_COMMAND_LIST_TYPE_DIRECT);
     D3D12Tools::CloseCommandList(computeCommandList);
     ID3D12Fence* computeCompleteFence = D3D12Tools::CreateFence(pDevice);
-    ID3D12Fence* computeQueryResolvedFence = D3D12Tools::CreateFence(pDevice);
 
     ID3D12CommandQueue* pGraphicsCommandQueue = renderer.mGraphicsCommandQueue;
     ID3D12CommandAllocator* graphicsCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
     ID3D12GraphicsCommandList* graphicsCommandList = D3D12Tools::CreateCommandList(pDevice, graphicsCommandAllocator, D3D12_COMMAND_LIST_TYPE_DIRECT);
     D3D12Tools::CloseCommandList(graphicsCommandList);
     ID3D12Fence* graphicsCompleteFence = D3D12Tools::CreateFence(pDevice);
-    ID3D12Fence* graphicsQueryResolvedFence = D3D12Tools::CreateFence(pDevice);
+
+    ID3D12CommandQueue* queryCommandQueue = D3D12Tools::CreateCommandQueue(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
+    ID3D12CommandAllocator* queryCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
+    ID3D12GraphicsCommandList* queryCommandList = D3D12Tools::CreateCommandList(pDevice, queryCommandAllocator, D3D12_COMMAND_LIST_TYPE_DIRECT);
+    D3D12Tools::CloseCommandList(queryCommandList);
+    ID3D12Fence* queryComputeCompleteFence = D3D12Tools::CreateFence(pDevice);
+    ID3D12Fence* queryGraphicsCompleteFence = D3D12Tools::CreateFence(pDevice);
 
     ParticleUpdateSystem particleUpdateSystem(pDevice, pDeviceHeapMemory);
     ParticleRenderSystem particleRenderSystem(pDevice, pDeviceHeapMemory, renderer.mBackBufferFormat, width, height);
@@ -103,7 +108,7 @@ int main()
                 CPUTIMER(dt);
                 // +++ UPDATE +++ //
                 D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID, renderer.mSyncEvent);
-                D3D12Tools::ResetGraphicsCommandList(computeCommandAllocator, computeCommandList);
+                D3D12Tools::ResetCommandList(computeCommandAllocator, computeCommandList);
                 if (gpuProfile) gpuComputeTimer.Start(computeCommandList);
 
                 camera.Update(20.f, 2.f, dt, &inputManager);
@@ -120,7 +125,7 @@ int main()
 
                 // +++ RENDER +++ //
                 D3D12Tools::WaitFence(graphicsCompleteFence, renderer.mFrameID, renderer.mSyncEvent);
-                D3D12Tools::ResetGraphicsCommandList(graphicsCommandAllocator, graphicsCommandList);
+                D3D12Tools::ResetCommandList(graphicsCommandAllocator, graphicsCommandList);
                 if (gpuProfile) gpuGraphicsTimer.Start(graphicsCommandList);
 
                 FrameBuffer* backBuffer = renderer.SwapBackBuffer();
@@ -158,20 +163,20 @@ int main()
                 D3D12Tools::WaitFence(graphicsCompleteFence, renderer.mFrameID, renderer.mSyncEvent);
 
                 // Reslove query data.
-                D3D12Tools::ResetGraphicsCommandList(computeCommandAllocator, computeCommandList);
-                gpuComputeTimer.ResolveQuery(computeCommandList);
-                D3D12Tools::CloseCommandList(computeCommandList);
-                D3D12Tools::ExecuteCommandLists(computeCommandQueue, computeCommandList);
-                computeCommandQueue->Signal(computeQueryResolvedFence, renderer.mFrameID + 1);
-                D3D12Tools::WaitFence(computeQueryResolvedFence, renderer.mFrameID, renderer.mSyncEvent);
+                D3D12Tools::ResetCommandList(queryCommandAllocator, queryCommandList);
+                gpuComputeTimer.ResolveQuery(queryCommandList);
+                D3D12Tools::CloseCommandList(queryCommandList);
+                D3D12Tools::ExecuteCommandLists(queryCommandQueue, queryCommandList);
+                queryCommandQueue->Signal(queryComputeCompleteFence, renderer.mFrameID);
+                D3D12Tools::WaitFence(queryComputeCompleteFence, renderer.mFrameID, renderer.mSyncEvent);
                 gpuComputeTimer.CalculateTime();
 
-                D3D12Tools::ResetGraphicsCommandList(graphicsCommandAllocator, graphicsCommandList);
-                gpuGraphicsTimer.ResolveQuery(graphicsCommandList);
-                D3D12Tools::CloseCommandList(graphicsCommandList);
-                D3D12Tools::ExecuteCommandLists(pGraphicsCommandQueue, graphicsCommandList);
-                pGraphicsCommandQueue->Signal(graphicsQueryResolvedFence, renderer.mFrameID + 1);
-                D3D12Tools::WaitFence(graphicsQueryResolvedFence, renderer.mFrameID, renderer.mSyncEvent);
+                D3D12Tools::ResetCommandList(queryCommandAllocator, queryCommandList);
+                gpuGraphicsTimer.ResolveQuery(queryCommandList);
+                D3D12Tools::CloseCommandList(queryCommandList);
+                D3D12Tools::ExecuteCommandLists(queryCommandQueue, queryCommandList);
+                queryCommandQueue->Signal(queryGraphicsCompleteFence, renderer.mFrameID);
+                D3D12Tools::WaitFence(queryGraphicsCompleteFence, renderer.mFrameID, renderer.mSyncEvent);
                 gpuGraphicsTimer.CalculateTime();
 
                 // Get timestamps.
@@ -191,13 +196,17 @@ int main()
     // --- MAIN LOOP --- //
 
     // +++ SHUTDOWN +++ //
-    computeQueryResolvedFence->Release();
+    queryGraphicsCompleteFence->Release();
+    queryComputeCompleteFence->Release();
+    queryCommandList->Release();
+    queryCommandAllocator->Release();
+    queryCommandQueue->Release();
+
     computeCompleteFence->Release();
     computeCommandList->Release();
     computeCommandAllocator->Release();
     computeCommandQueue->Release();
 
-    graphicsQueryResolvedFence->Release();
     graphicsCompleteFence->Release();
     graphicsCommandList->Release();
     graphicsCommandAllocator->Release();

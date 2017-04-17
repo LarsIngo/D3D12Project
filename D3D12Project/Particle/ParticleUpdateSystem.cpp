@@ -77,10 +77,10 @@ void ParticleUpdateSystem::Update(ID3D12GraphicsCommandList* pCommandList, Scene
     pCommandList->SetDescriptorHeaps(_countof(ppDescriptorHeaps), ppDescriptorHeaps);
 
     pCommandList->SetPipelineState(mPipeline);
-    scene->mParticleBuffer->GetInputBuffer()->TransitionState(pCommandList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    assert(scene->mParticleBuffer->GetInputBuffer()->mState == D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     pCommandList->SetComputeRootShaderResourceView(0, scene->mParticleBuffer->GetInputBuffer()->mBuff->GetGPUVirtualAddress());
     pCommandList->SetComputeRootShaderResourceView(1, mMetaBuffer->mBuff->GetGPUVirtualAddress());
-    scene->mParticleBuffer->GetOutputBuffer()->TransitionState(pCommandList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    assert(scene->mParticleBuffer->GetOutputBuffer()->mState == D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     pCommandList->SetComputeRootUnorderedAccessView(2, scene->mParticleBuffer->GetOutputBuffer()->mBuff->GetGPUVirtualAddress());
 
     pCommandList->Dispatch(static_cast<unsigned int>(ceil(scene->mParticleCount / 256.f)), 1, 1);

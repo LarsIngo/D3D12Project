@@ -79,7 +79,7 @@ class D3D12Timer {
         // Resolve query data. Write query to device memory. Make sure to wait for query to finsih before resolving data.
         void ResolveQuery(ID3D12GraphicsCommandList* pCommandList)
         {
-            pCommandList->ResolveQueryData(mQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, 0, 2, mQueryResource, 0);
+            pCommandList->ResolveQueryData(mQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, 0, mQueryCount, mQueryResource, 0);
         }
 
         // Calcluate time and map memory to CPU.

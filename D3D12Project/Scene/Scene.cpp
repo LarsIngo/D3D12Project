@@ -23,5 +23,8 @@ void Scene::AddParticles(ID3D12GraphicsCommandList* pCommandList, std::vector<Pa
     mParticleBuffer->GetInputBuffer()->Write(pCommandList, particleList.data(), bytes, offset);
     mParticleBuffer->GetOutputBuffer()->Write(pCommandList, particleList.data(), bytes, offset);
 
+    mParticleBuffer->GetInputBuffer()->TransitionState(pCommandList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    mParticleBuffer->GetOutputBuffer()->TransitionState(pCommandList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
     mParticleCount += particleCount;
 }

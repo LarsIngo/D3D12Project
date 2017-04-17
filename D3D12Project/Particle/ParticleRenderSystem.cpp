@@ -140,4 +140,7 @@ void ParticleRenderSystem::Render(ID3D12GraphicsCommandList* pCommandList, Scene
     pCommandList->DrawInstanced(scene->mParticleCount, 1, 0, 0);
 
     scene->mParticleBuffer->Swap();
+
+    scene->mParticleBuffer->GetInputBuffer()->TransitionState(pCommandList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    scene->mParticleBuffer->GetOutputBuffer()->TransitionState(pCommandList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 }
