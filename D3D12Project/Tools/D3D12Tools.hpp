@@ -74,18 +74,18 @@ namespace D3D12Tools
     }
 
     // Create command allocator.
-    inline ID3D12CommandAllocator* CreateCommandAllocator(ID3D12Device* pDevice)
+    inline ID3D12CommandAllocator* CreateCommandAllocator(ID3D12Device* pDevice, D3D12_COMMAND_LIST_TYPE type)
     {
         ID3D12CommandAllocator* commandAllocator;
-        ASSERT(pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)), S_OK);
+        ASSERT(pDevice->CreateCommandAllocator(type, IID_PPV_ARGS(&commandAllocator)), S_OK);
         return commandAllocator;
     }
 
     // Create graphics command list.
-    inline ID3D12GraphicsCommandList* CreateGraphicsCommandList(ID3D12Device* pDevice, ID3D12CommandAllocator* pCommandAllocator)
+    inline ID3D12GraphicsCommandList* CreateCommandList(ID3D12Device* pDevice, ID3D12CommandAllocator* pCommandAllocator, D3D12_COMMAND_LIST_TYPE type)
     {
         ID3D12GraphicsCommandList* commandList;
-        ASSERT(pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, pCommandAllocator, NULL, IID_PPV_ARGS(&commandList)), S_OK);
+        ASSERT(pDevice->CreateCommandList(0, type, pCommandAllocator, NULL, IID_PPV_ARGS(&commandList)), S_OK);
         return commandList;
     }
 
