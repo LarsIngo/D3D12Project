@@ -46,7 +46,7 @@ FrameBuffer* D3D12Renderer::SwapBackBuffer()
 {
     mActiveSwapchainBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
 
-    D3D12Tools::WaitFence(mPresentCompleteFence, mFrameID, mSyncEvent);
+    D3D12Tools::WaitFence(mPresentCompleteFence, mFrameID);
 
     assert(mActiveSwapchainBufferIndex <= mSwapChainFrameBufferList.size());
     return mSwapChainFrameBufferList[mActiveSwapchainBufferIndex];
@@ -171,15 +171,11 @@ void D3D12Renderer::InitialiseD3D12()
 
     ASSERT(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mPresentCompleteFence)), S_OK);
 
-    mSyncEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    assert(mSyncEvent != nullptr);
-
     dxgiFactory->Release();
 }
 
 void D3D12Renderer::DeInitialiseD3D12()
 {
-    CloseHandle(mSyncEvent);
     SAFE_RELEASE(mPresentCompleteFence);
     for (std::size_t i = 0; i < mSwapChainFrameBufferList.size(); ++i)
         delete mSwapChainFrameBufferList[i];

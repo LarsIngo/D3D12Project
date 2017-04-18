@@ -51,7 +51,6 @@ class D3D12Renderer
         ID3D12Fence* mPresentCompleteFence;
 
         UINT64 mFrameID;
-        HANDLE mSyncEvent;
 
     private:
         void InitialiseGLFW();

@@ -29,6 +29,8 @@
 
 namespace D3D12Tools
 {
+    const static HANDLE staticEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+
     // Comlile shader.
     inline void CompileShader(const char* shaderPath, const char* entry, const char* version, D3D12_SHADER_BYTECODE& shader)
     {
@@ -111,12 +113,12 @@ namespace D3D12Tools
     }
 
     // Wait for fence.
-    inline void WaitFence(ID3D12Fence* fence, UINT64 waitValue, HANDLE& syncEvent)
+    inline void WaitFence(ID3D12Fence* fence, UINT64 waitValue)
     {
         if (fence->GetCompletedValue() < waitValue)
         {
-            ASSERT(fence->SetEventOnCompletion(waitValue, syncEvent), S_OK);
-            WaitForSingleObject(syncEvent, INFINITE);
+            ASSERT(fence->SetEventOnCompletion(waitValue, staticEvent), S_OK);
+            WaitForSingleObject(staticEvent, INFINITE);
         }
     }
 
