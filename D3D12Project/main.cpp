@@ -167,16 +167,16 @@ int main()
                 gpuComputeTimer.ResolveQuery(computeCommandList);
                 D3D12Tools::CloseCommandList(computeCommandList);
                 D3D12Tools::ExecuteCommandLists(computeCommandQueue, computeCommandList);
-                computeCommandQueue->Signal(queryGraphicsCompleteFence, renderer.mFrameID + 1);
-                D3D12Tools::WaitFence(queryGraphicsCompleteFence, renderer.mFrameID + 1);
+                computeCommandQueue->Signal(queryComputeCompleteFence, renderer.mFrameID + 1);
+                D3D12Tools::WaitFence(queryComputeCompleteFence, renderer.mFrameID + 1);
                 gpuComputeTimer.CalculateTime();
 
                 D3D12Tools::ResetCommandList(graphicsCommandAllocator, graphicsCommandList);
                 gpuGraphicsTimer.ResolveQuery(graphicsCommandList);
                 D3D12Tools::CloseCommandList(graphicsCommandList);
                 D3D12Tools::ExecuteCommandLists(pGraphicsCommandQueue, graphicsCommandList);
-                pGraphicsCommandQueue->Signal(queryComputeCompleteFence, renderer.mFrameID + 1);
-                D3D12Tools::WaitFence(queryComputeCompleteFence, renderer.mFrameID + 1);
+                pGraphicsCommandQueue->Signal(queryGraphicsCompleteFence, renderer.mFrameID + 1);
+                D3D12Tools::WaitFence(queryGraphicsCompleteFence, renderer.mFrameID + 1);
                 gpuGraphicsTimer.CalculateTime();
 
                 // Get timestamps.
