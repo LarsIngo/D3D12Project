@@ -27,9 +27,9 @@ int main()
     ID3D12Device* pDevice = renderer.mDevice;
     DeviceHeapMemory* pDeviceHeapMemory = renderer.mDeviceHeapMemory;
 
-    ID3D12CommandQueue* computeCommandQueue = D3D12Tools::CreateCommandQueue(pDevice, D3D12_COMMAND_LIST_TYPE_COMPUTE);
-    ID3D12CommandAllocator* computeCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice, D3D12_COMMAND_LIST_TYPE_COMPUTE);
-    ID3D12GraphicsCommandList* computeCommandList = D3D12Tools::CreateCommandList(pDevice, computeCommandAllocator, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+    ID3D12CommandQueue* computeCommandQueue = D3D12Tools::CreateCommandQueue(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
+    ID3D12CommandAllocator* computeCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
+    ID3D12GraphicsCommandList* computeCommandList = D3D12Tools::CreateCommandList(pDevice, computeCommandAllocator, D3D12_COMMAND_LIST_TYPE_DIRECT);
     D3D12Tools::CloseCommandList(computeCommandList);
     ID3D12Fence* computeCompleteFence = D3D12Tools::CreateFence(pDevice);
 
@@ -55,6 +55,7 @@ int main()
     int lenY = 256;
     Scene scene(pDevice, pDeviceHeapMemory, lenX * lenY);
     {
+        ID3D12CommandQueue* uploadCommandQueue = D3D12Tools::CreateCommandQueue(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
         ID3D12CommandAllocator* uploadCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
         ID3D12GraphicsCommandList* uploadCommandList = D3D12Tools::CreateCommandList(pDevice, uploadCommandAllocator, D3D12_COMMAND_LIST_TYPE_DIRECT);
         ID3D12Fence* uploadFence = D3D12Tools::CreateFence(pDevice);
@@ -77,10 +78,11 @@ int main()
         scene.AddParticles(uploadCommandList, particleList);
 
         D3D12Tools::CloseCommandList(uploadCommandList);
-        D3D12Tools::ExecuteCommandLists(pGraphicsCommandQueue, uploadCommandList);
-        pGraphicsCommandQueue->Signal(uploadFence, 1);
+        D3D12Tools::ExecuteCommandLists(uploadCommandQueue, uploadCommandList);
+        uploadCommandQueue->Signal(uploadFence, 1);
         D3D12Tools::WaitFence(uploadFence, 1);
 
+        uploadCommandQueue->Release();
         uploadCommandAllocator->Release();
         uploadFence->Release();
         uploadCommandList->Release();
@@ -200,8 +202,8 @@ int main()
     D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID);
     D3D12Tools::WaitFence(graphicsCompleteFence, renderer.mFrameID);
 
-    queryGraphicsCompleteFence->Release();
     queryComputeCompleteFence->Release();
+    queryGraphicsCompleteFence->Release();
 
     computeCompleteFence->Release();
     computeCommandList->Release();
