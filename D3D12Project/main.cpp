@@ -39,10 +39,6 @@ int main()
     D3D12Tools::CloseCommandList(graphicsCommandList);
     ID3D12Fence* graphicsCompleteFence = D3D12Tools::CreateFence(pDevice);
 
-    //ID3D12CommandQueue* queryCommandQueue = D3D12Tools::CreateCommandQueue(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
-    //ID3D12CommandAllocator* queryCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
-    //ID3D12GraphicsCommandList* queryCommandList = D3D12Tools::CreateCommandList(pDevice, queryCommandAllocator, D3D12_COMMAND_LIST_TYPE_DIRECT);
-    //D3D12Tools::CloseCommandList(queryCommandList);
     ID3D12Fence* queryComputeCompleteFence = D3D12Tools::CreateFence(pDevice);
     ID3D12Fence* queryGraphicsCompleteFence = D3D12Tools::CreateFence(pDevice);
 
@@ -162,20 +158,25 @@ int main()
                 D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID);
                 D3D12Tools::WaitFence(graphicsCompleteFence, renderer.mFrameID);
 
-                // Reslove query data.
+                // Resolve compute query data.
                 D3D12Tools::ResetCommandList(computeCommandAllocator, computeCommandList);
                 gpuComputeTimer.ResolveQuery(computeCommandList);
                 D3D12Tools::CloseCommandList(computeCommandList);
                 D3D12Tools::ExecuteCommandLists(computeCommandQueue, computeCommandList);
                 computeCommandQueue->Signal(queryComputeCompleteFence, renderer.mFrameID + 1);
+
+                // Fetch compute query data.
                 D3D12Tools::WaitFence(queryComputeCompleteFence, renderer.mFrameID + 1);
                 gpuComputeTimer.CalculateTime();
 
+                // Resolve graphics query data.
                 D3D12Tools::ResetCommandList(graphicsCommandAllocator, graphicsCommandList);
                 gpuGraphicsTimer.ResolveQuery(graphicsCommandList);
                 D3D12Tools::CloseCommandList(graphicsCommandList);
                 D3D12Tools::ExecuteCommandLists(pGraphicsCommandQueue, graphicsCommandList);
                 pGraphicsCommandQueue->Signal(queryGraphicsCompleteFence, renderer.mFrameID + 1);
+
+                // Resolve graphics query data.
                 D3D12Tools::WaitFence(queryGraphicsCompleteFence, renderer.mFrameID + 1);
                 gpuGraphicsTimer.CalculateTime();
 
