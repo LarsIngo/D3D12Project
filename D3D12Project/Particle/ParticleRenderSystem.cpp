@@ -49,13 +49,13 @@ ParticleRenderSystem::ParticleRenderSystem(ID3D12Device* pDevice, DeviceHeapMemo
     }
 
     D3D12_SHADER_BYTECODE vertexShaderBytecode;
-    D3D12Tools::CompileShader("../resources/shaders/Particles_Render_VS.hlsl", "main", "vs_5_0", vertexShaderBytecode);
+    D3D12Tools::CompileShader("resources/shaders/Particles_Render_VS.hlsl", "main", "vs_5_0", vertexShaderBytecode);
 
     D3D12_SHADER_BYTECODE geometryShaderBytecode;
-    D3D12Tools::CompileShader("../resources/shaders/Particles_Render_GS.hlsl", "main", "gs_5_0", geometryShaderBytecode);
+    D3D12Tools::CompileShader("resources/shaders/Particles_Render_GS.hlsl", "main", "gs_5_0", geometryShaderBytecode);
 
     D3D12_SHADER_BYTECODE pixelShaderBytecode;
-    D3D12Tools::CompileShader("../resources/shaders/Particles_Render_PS.hlsl", "main", "ps_5_0", pixelShaderBytecode);
+    D3D12Tools::CompileShader("resources/shaders/Particles_Render_PS.hlsl", "main", "ps_5_0", pixelShaderBytecode);
 
     DXGI_SAMPLE_DESC sampleDesc;
     sampleDesc.Count = 1;

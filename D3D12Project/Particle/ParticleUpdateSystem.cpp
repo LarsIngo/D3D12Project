@@ -45,7 +45,7 @@ ParticleUpdateSystem::ParticleUpdateSystem(ID3D12Device* pDevice, DeviceHeapMemo
     }
 
     D3D12_SHADER_BYTECODE computeShaderBytecode;
-    D3D12Tools::CompileShader("../resources/shaders/Particles_Update_CS.hlsl", "main", "cs_5_0", computeShaderBytecode);
+    D3D12Tools::CompileShader("resources/shaders/Particles_Update_CS.hlsl", "main", "cs_5_0", computeShaderBytecode);
 
     D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
     psoDesc.pRootSignature = mRootSignature;
