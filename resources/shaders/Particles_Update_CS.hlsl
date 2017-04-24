@@ -22,7 +22,7 @@ struct MetaData
 // Meta buffer.
 StructuredBuffer<MetaData> g_MetaBuffer : register(t1);
 
-[numthreads(256, 1, 1)]
+[numthreads(128, 1, 1)]
 void main(uint3 threadID : SV_DispatchThreadID)
 {
     MetaData metaData = g_MetaBuffer[0];

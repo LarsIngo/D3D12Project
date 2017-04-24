@@ -83,5 +83,5 @@ void ParticleUpdateSystem::Update(ID3D12GraphicsCommandList* pCommandList, Scene
     assert(scene->mParticleBuffer->GetOutputBuffer()->mState == D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     pCommandList->SetComputeRootUnorderedAccessView(2, scene->mParticleBuffer->GetOutputBuffer()->mBuff->GetGPUVirtualAddress());
 
-    pCommandList->Dispatch(static_cast<unsigned int>(ceil(scene->mParticleCount / 256.f)), 1, 1);
+    pCommandList->Dispatch(static_cast<unsigned int>(ceil(scene->mParticleCount / 128.f)), 1, 1);
 }

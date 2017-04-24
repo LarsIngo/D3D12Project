@@ -70,7 +70,8 @@ int main()
             for (int x = 0; x < lenX; ++x)
             {
                 particle.position = glm::vec4(x * spacing, y * spacing, 0.f, 0.f);
-                particle.velocity = -glm::normalize(particle.position + glm::vec4(speed, speed, 0.f, 0.f));
+                //particle.velocity = -glm::normalize(particle.position + glm::vec4(speed, speed, 0.f, 0.f));
+                particle.velocity = glm::vec4(0.f, 0.f, 0.f, 0.f);
                 particle.color = glm::vec4((float)y / lenY, 0.7f, 1.f - (float)x / lenX, 1.f);
                 particleList.push_back(particle);
             }
