@@ -13,8 +13,6 @@
 #include "Camera/Camera.hpp"
 #include "Managers/InputManager.hpp"
 
-#define SYNC_COMPUTE_GRAPHICS
-
 int main()
 {
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -101,7 +99,7 @@ int main()
         while (renderer.Running())
         {
             //glm::clamp(dt, 1.f / 6000.f, 1.f / 60.f);
-            bool cpuProfile = inputManager.KeyPressed(GLFW_KEY_F1);
+            bool syncComputeGraphics = inputManager.KeyPressed(GLFW_KEY_F1);
             bool gpuProfile = inputManager.KeyPressed(GLFW_KEY_F2);
             {
                 CPUTIMER(dt);
@@ -117,9 +115,8 @@ int main()
                 D3D12Tools::CloseCommandList(computeCommandList);
                 D3D12Tools::ExecuteCommandLists(computeCommandQueue, computeCommandList);
                 computeCommandQueue->Signal(computeCompleteFence, renderer.mFrameID + 1);
-#ifdef SYNC_COMPUTE_GRAPHICS
-                D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID + 1);
-#endif
+                //SYNC_COMPUTE_GRAPHICS
+                if (syncComputeGraphics) D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID + 1);
                 // --- UPDATE --- //
 
                 // +++ RENDER +++ //
@@ -148,10 +145,6 @@ int main()
             // +++ PROFILING +++ //
             ++frameCount;
             totalTime += dt;
-            if (cpuProfile)
-            {
-                std::cout << "CPU(Delta time): " << 1000.f * dt << " ms | FPS: " << 1.f / dt << std::endl;
-            }
             if (gpuProfile)
             {
                 // Wait complete.
