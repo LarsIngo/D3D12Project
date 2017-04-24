@@ -31,12 +31,8 @@ class D3D12Renderer
         // Close window.
         void Close();
 
-        // Swap back buffer.
-        // Returns next active frame buffer to present to window.
-        FrameBuffer* SwapBackBuffer();
-
-        // Present active back buffer.
-        void PresentBackBuffer();
+        // Present frame buffer to screen.
+        void Present(FrameBuffer* fb);
 
         // GLFW window.
         GLFWwindow* mGLFWwindow;
@@ -44,11 +40,8 @@ class D3D12Renderer
         // D3D12.
         ID3D12Device* mDevice;
         DeviceHeapMemory* mDeviceHeapMemory;
-        ID3D12CommandQueue* mGraphicsCommandQueue;
 
         DXGI_FORMAT mBackBufferFormat;
-
-        ID3D12Fence* mPresentCompleteFence;
 
         UINT64 mFrameID;
 
@@ -63,6 +56,11 @@ class D3D12Renderer
         IDXGISwapChain4* mSwapChain;
         UINT mActiveSwapchainBufferIndex;
         std::vector<FrameBuffer*> mSwapChainFrameBufferList;
+
+        ID3D12CommandQueue* mPresentCommandQueue;
+        ID3D12CommandAllocator* mPresentCommandAllocator;
+        ID3D12GraphicsCommandList* mPresentCommandList;
+        ID3D12Fence* mPresentCompleteFence;
 
         unsigned int mWinWidth;
         unsigned int mWinHeight;
