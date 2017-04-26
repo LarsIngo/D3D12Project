@@ -6,56 +6,54 @@
 
 // Profiler.
 class Profiler {
-    public:
-        // Constructor.
-        Profiler(unsigned int width, unsigned int height)
-        {
-            mWidth = width;
-            mHeight = height;
-        }
+public:
+    // Constructor.
+    Profiler(unsigned int width, unsigned int height)
+    {
+        mWidth = width;
+        mHeight = height;
+    }
 
-        // Destructor.
-        ~Profiler()
-        {
-            mFileStream.open("GraphScript.m");
+    // Destructor.
+    ~Profiler()
+    {
+        mFileStream.open("GraphScript.m");
 
-            mFileStream << "clear all;\nclose all;\n";
+        mFileStream << "clear all;\nclose all;\n";
 
-            mFileStream << "set(gcf, 'units', 'points', 'position', [0, 0, " + std::to_string(mWidth) + ", " + std::to_string(mHeight) + "]);\n";
+        mFileStream << "set(gcf, 'units', 'points', 'position', [0, 0, " + std::to_string(mWidth) + ", " + std::to_string(mHeight) + "]);\n";
 
-            mFileStream << "xlabel('x');\n";
-            mFileStream << "ylabel('y');\n";
+        mFileStream << "xlabel('x');\n";
+        mFileStream << "ylabel('y');\n";
 
-            mFileStream << "subplot(2,1,2);\n";
+        mFileStream << "subplot(2,1,2);\n";
 
-            mFileStream << mRectangleStream.str();
+        mFileStream << mRectangleStream.str();
 
-            mFileStream << "subplot(2,1,1);\n";
-            mFileStream << "hold on;\n";
+        mFileStream << "subplot(2,1,1);\n";
+        mFileStream << "hold on;\n";
 
-            mFileStream << mPointStream.str();
+        mFileStream << mPointStream.str();
 
-            //plot(1493198854020035776, 1, '-ro');
+        mFileStream.close();
 
-            mFileStream.close();
+    }
 
-        }
+    void Rectangle(UINT64 x, UINT64 y, UINT64 width, UINT64 height,
+        float r, float g, float b)
+    {
+        mRectangleStream << "rectangle('Position', [" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(width) + ", " + std::to_string(height) + "], 'FaceColor', [" + std::to_string(r) + " " + std::to_string(g) + " " + std::to_string(b) + "]);\n";
+    }
 
-        void Rectangle( UINT64 x, UINT64 y, UINT64 width, UINT64 height,
-            float r, float g, float b)
-        {
-            mRectangleStream << "rectangle('Position', [" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(width) + ", " + std::to_string(height) + "], 'FaceColor', [" + std::to_string(r) + " " + std::to_string(g) + " " + std::to_string(b) + "]);\n";
-        }
+    void Point(UINT64 x, UINT64 y, char* cmd = "'-ro'")
+    {
+        mPointStream << "plot(" + std::to_string(x) + ", " + std::to_string(y) + ", " + cmd + ");\n";
+    }
 
-        void Point(UINT64 x, UINT64 y)
-        {
-            mPointStream << "plot(" + std::to_string(x) + ", " + std::to_string(y) + ", '-ro');\n";
-        }
-
-    private:
-        std::ofstream mFileStream;
-        std::stringstream mRectangleStream;
-        std::stringstream mPointStream;
-        unsigned int mWidth;
-        unsigned int mHeight;
+private:
+    std::ofstream mFileStream;
+    std::stringstream mRectangleStream;
+    std::stringstream mPointStream;
+    unsigned int mWidth;
+    unsigned int mHeight;
 };
