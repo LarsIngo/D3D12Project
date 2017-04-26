@@ -84,4 +84,8 @@ void ParticleUpdateSystem::Update(ID3D12GraphicsCommandList* pCommandList, Scene
     pCommandList->SetComputeRootUnorderedAccessView(2, scene->mParticleBuffer->GetOutputBuffer()->mBuff->GetGPUVirtualAddress());
 
     pCommandList->Dispatch(static_cast<unsigned int>(ceil(scene->mParticleCount / 128.f)), 1, 1);
+
+    {   // CREATE DEPENDENCY TO MEASURE EXECUTION TIME OF DISPATCH CALL //https://www.gamedev.net/topic/646113-compute-shader-execution-time/
+        pCommandList->CopyBufferRegion(scene->mParticleBuffer->GetOutputBuffer()->mBuff, 0, scene->mParticleBuffer->GetInputBuffer()->mBuff, 0, sizeof(Particle));
+    }
 }
