@@ -189,12 +189,12 @@ int main()
                 // +++ UPDATE +++ //
                 D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID);
                 D3D12Tools::ResetCommandList(computeCommandAllocator, computeCommandList);
-                if (gpuProfile) gpuComputeTimer.Start(computeCommandList);
+                if (gpuProfile && skipTime > 0.f) gpuComputeTimer.Start(computeCommandList);
 
                 camera.Update(20.f, 2.f, dt, &inputManager);
                 particleUpdateSystem.Update(computeCommandList, &scene, dt);
 
-                if (gpuProfile) gpuComputeTimer.Stop(computeCommandList);
+                if (gpuProfile && skipTime > 0.f) gpuComputeTimer.Stop(computeCommandList);
                 D3D12Tools::CloseCommandList(computeCommandList);
                 D3D12Tools::ExecuteCommandLists(computeCommandQueue, computeCommandList);
                 computeCommandQueue->Signal(computeCompleteFence, renderer.mFrameID + 1);
@@ -205,12 +205,12 @@ int main()
                 // +++ RENDER +++ //
                 D3D12Tools::WaitFence(graphicsCompleteFence, renderer.mFrameID);
                 D3D12Tools::ResetCommandList(graphicsCommandAllocator, graphicsCommandList);
-                if (gpuProfile) gpuGraphicsTimer.Start(graphicsCommandList);
+                if (gpuProfile && skipTime > 0.f) gpuGraphicsTimer.Start(graphicsCommandList);
 
                 camera.mpFrameBuffer->Clear(graphicsCommandList, 0.2f, 0.2f, 0.2f, 0.f);
                 particleRenderSystem.Render(graphicsCommandList, &scene, &camera);
 
-                if (gpuProfile) gpuGraphicsTimer.Stop(graphicsCommandList);
+                if (gpuProfile && skipTime > 0.f) gpuGraphicsTimer.Stop(graphicsCommandList);
                 D3D12Tools::CloseCommandList(graphicsCommandList);
                 D3D12Tools::ExecuteCommandLists(graphicsCommandQueue, graphicsCommandList);
                 graphicsCommandQueue->Signal(graphicsCompleteFence, renderer.mFrameID + 1);
