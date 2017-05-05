@@ -14,8 +14,8 @@ class D3D12Timer {
             mActive = false;
             mDeltaTime = 0;
             mBeginTime = 0;
-            mEndTime = 0;
             mQueryCount = 2;
+            mBaseline = 0;
 
             D3D12_QUERY_HEAP_DESC queryHeapDesc;
             queryHeapDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
@@ -83,22 +83,32 @@ class D3D12Timer {
         }
 
         // Calcluate time and map memory to CPU.
-        void CalculateTime()
+        void CalculateTime(ID3D12CommandQueue* pCommandQueue)
         {
+            UINT64 timestampFrequency = 1;
+            ASSERT(pCommandQueue->GetTimestampFrequency(&timestampFrequency), S_OK);
+
             // Copy to CPU.
             UINT64 timeStamps[2];
             {
                 void* mappedResource;
-                //CD3DX12_RANGE readRange(0, sizeof(UINT64) * mQueryCount);
+                // CD3DX12_RANGE readRange(0, 0);
                 ASSERT(mQueryResource->Map(0, nullptr, &mappedResource), S_OK);
                 memcpy(&timeStamps, mappedResource, sizeof(UINT64) * mQueryCount);
                 mQueryResource->Unmap(0, nullptr);
             }
 
-            mBeginTime = timeStamps[0];
-            mEndTime = timeStamps[1];
+            //mBeginTime = timeStamps[0];
+            //mEndTime = timeStamps[1];
 
-            mDeltaTime = mEndTime - mBeginTime;
+            //mDeltaTime = mEndTime - mBeginTime;
+
+            //double a = mDeltaTime / timestampFrequency * 1000000000;
+
+            UINT64 delta = timeStamps[1] - timeStamps[0];
+            double frequency = static_cast<double>(timestampFrequency);
+            mDeltaTime = (delta / frequency) * 1000000000;
+            mBeginTime = (timeStamps[0] / frequency) * 1000000000;
         }
 
         // Get time from start to stop in nano seconds.
@@ -109,7 +119,7 @@ class D3D12Timer {
 
         UINT64 GetBeginTime()
         {
-            return mBeginTime;
+            return mBeginTime - mBaseline;
         }
 
         // Whether timer is active.
@@ -118,6 +128,8 @@ class D3D12Timer {
             return mActive;
         }
 
+        UINT64 mBaseline;
+
     private:
         ID3D12Device* mpDevice;
         ID3D12QueryHeap* mQueryHeap;
@@ -125,6 +137,5 @@ class D3D12Timer {
         bool mActive;
         UINT64 mDeltaTime;
         UINT64 mBeginTime;
-        UINT64 mEndTime;
         unsigned int mQueryCount;
 };

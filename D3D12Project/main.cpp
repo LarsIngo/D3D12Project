@@ -100,8 +100,84 @@ int main()
         std::cout << "Hold F2 to profile. " << std::endl;
         std::cout << "Hold F3 to show average frame time. " << std::endl;
         unsigned int frameCount = 0;
+
         D3D12Timer gpuComputeTimer(pDevice);
+        float computeBaseline = 0.f;
+        {
+            ID3D12Fence* baselineFence = D3D12Tools::CreateFence(pDevice);
+
+            // Reset compute command list;
+            D3D12Tools::ResetCommandList(computeCommandAllocator, computeCommandList);
+
+            // Get baseline.
+            gpuComputeTimer.Start(computeCommandList);
+            gpuComputeTimer.Stop(computeCommandList);
+
+            D3D12Tools::CloseCommandList(computeCommandList);
+            D3D12Tools::ExecuteCommandLists(computeCommandQueue, computeCommandList);
+
+            computeCommandQueue->Signal(baselineFence, 1);
+            D3D12Tools::WaitFence(baselineFence, 1);
+
+            // Resolve compute query data.
+            D3D12Tools::ResetCommandList(computeCommandAllocator, computeCommandList);
+            gpuComputeTimer.ResolveQuery(computeCommandList);
+            D3D12Tools::CloseCommandList(computeCommandList);
+            D3D12Tools::ExecuteCommandLists(computeCommandQueue, computeCommandList);
+
+            // Resolve compute query data.
+            computeCommandQueue->Signal(baselineFence, 2);
+            D3D12Tools::WaitFence(baselineFence, 2);
+            gpuComputeTimer.CalculateTime(computeCommandQueue);
+            computeBaseline = gpuComputeTimer.GetBeginTime();
+
+            baselineFence->Release();
+        }
+
         D3D12Timer gpuGraphicsTimer(pDevice);
+        float graphicsBaseline = 0.f;
+        {
+            ID3D12Fence* baselineFence = D3D12Tools::CreateFence(pDevice);
+
+            // Reset graphics command list;
+            D3D12Tools::ResetCommandList(graphicsCommandAllocator, graphicsCommandList);
+
+            // Get baseline.
+            gpuGraphicsTimer.Start(graphicsCommandList);
+            gpuGraphicsTimer.Stop(graphicsCommandList);
+
+            D3D12Tools::CloseCommandList(graphicsCommandList);
+            D3D12Tools::ExecuteCommandLists(graphicsCommandQueue, graphicsCommandList);
+
+            graphicsCommandQueue->Signal(baselineFence, 1);
+            D3D12Tools::WaitFence(baselineFence, 1);
+
+            // Resolve graphics query data.
+            D3D12Tools::ResetCommandList(graphicsCommandAllocator, graphicsCommandList);
+            gpuGraphicsTimer.ResolveQuery(graphicsCommandList);
+            D3D12Tools::CloseCommandList(graphicsCommandList);
+            D3D12Tools::ExecuteCommandLists(graphicsCommandQueue, graphicsCommandList);
+
+            // Resolve graphics query data.
+            graphicsCommandQueue->Signal(baselineFence, 2);
+            D3D12Tools::WaitFence(baselineFence, 2);
+            gpuGraphicsTimer.CalculateTime(graphicsCommandQueue);
+            graphicsBaseline = gpuGraphicsTimer.GetBeginTime();
+            
+
+            baselineFence->Release();
+        }
+
+        // Set baseline.
+        if (computeBaseline > graphicsBaseline)
+        {
+            gpuComputeTimer.mBaseline = computeBaseline - graphicsBaseline;
+        }
+        else
+        {
+            gpuGraphicsTimer.mBaseline = graphicsBaseline - computeBaseline;
+        }
+
         Profiler profiler(1600, 200);
         while (renderer.Running())
         {
@@ -170,7 +246,7 @@ int main()
                     // Fetch compute query data.
                     computeCommandQueue->Signal(queryComputeCompleteFence, renderer.mFrameID + 1);
                     D3D12Tools::WaitFence(queryComputeCompleteFence, renderer.mFrameID + 1);
-                    gpuComputeTimer.CalculateTime();
+                    gpuComputeTimer.CalculateTime(computeCommandQueue);
 
                     // Resolve graphics query data.
                     D3D12Tools::ResetCommandList(graphicsCommandAllocator, graphicsCommandList);
@@ -181,7 +257,7 @@ int main()
                     // Resolve graphics query data.
                     graphicsCommandQueue->Signal(queryGraphicsCompleteFence, renderer.mFrameID + 1);
                     D3D12Tools::WaitFence(queryGraphicsCompleteFence, renderer.mFrameID + 1);
-                    gpuGraphicsTimer.CalculateTime();
+                    gpuGraphicsTimer.CalculateTime(graphicsCommandQueue);
 
                     // Get timestamps.
                     float computeTime = 1.f / 1000000.f * gpuComputeTimer.GetDeltaTime();
