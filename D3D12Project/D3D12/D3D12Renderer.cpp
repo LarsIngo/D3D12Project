@@ -48,7 +48,8 @@ void D3D12Renderer::Present(FrameBuffer* fb)
     assert(mActiveSwapchainBufferIndex <= mSwapChainFrameBufferList.size());
     FrameBuffer* backBuffer = mSwapChainFrameBufferList[mActiveSwapchainBufferIndex];
 
-    // Reset present command list.
+    // Wait for previous present to be complteted.
+    D3D12Tools::WaitFence(mPresentCompleteFence, mFrameID);
     D3D12Tools::ResetCommandList(mPresentCommandAllocator, mPresentCommandList);
 
     // Copy frame buffer to back buffer.
@@ -60,13 +61,16 @@ void D3D12Renderer::Present(FrameBuffer* fb)
     D3D12Tools::CloseCommandList(mPresentCommandList);
     D3D12Tools::ExecuteCommandLists(mPresentCommandQueue, mPresentCommandList);
 
-    // Wait for frame to complete.
-    mPresentCommandQueue->Signal(mPresentCompleteFence, mFrameID + 1);
-    D3D12Tools::WaitFence(mPresentCompleteFence, mFrameID + 1);
+    // Wait for frame to copied to back buffer.
+    mPresentCommandQueue->Signal(mCopyCompleteFence, mFrameID + 1);
+    D3D12Tools::WaitFence(mCopyCompleteFence, mFrameID + 1);
 
+    // Present to back buffer.
     mSwapChain->Present(0, 0);
-
     ++mFrameID;
+
+    // Signal present is complete.
+    mPresentCommandQueue->Signal(mPresentCompleteFence, mFrameID);
 }
 
 void D3D12Renderer::InitialiseGLFW()
@@ -180,12 +184,14 @@ void D3D12Renderer::InitialiseD3D12()
     }
 
     ASSERT(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mPresentCompleteFence)), S_OK);
+    ASSERT(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mCopyCompleteFence)), S_OK);
 
     dxgiFactory->Release();
 }
 
 void D3D12Renderer::DeInitialiseD3D12()
 {
+    SAFE_RELEASE(mCopyCompleteFence);
     SAFE_RELEASE(mPresentCompleteFence);
     for (std::size_t i = 0; i < mSwapChainFrameBufferList.size(); ++i)
         delete mSwapChainFrameBufferList[i];
