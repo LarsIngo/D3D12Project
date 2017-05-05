@@ -48,8 +48,7 @@ void D3D12Renderer::Present(FrameBuffer* fb)
     assert(mActiveSwapchainBufferIndex <= mSwapChainFrameBufferList.size());
     FrameBuffer* backBuffer = mSwapChainFrameBufferList[mActiveSwapchainBufferIndex];
 
-    // Wait for previous frame to complete.
-    D3D12Tools::WaitFence(mPresentCompleteFence, mFrameID);
+    // Reset present command list.
     D3D12Tools::ResetCommandList(mPresentCommandAllocator, mPresentCommandList);
 
     // Copy frame buffer to back buffer.
@@ -57,8 +56,11 @@ void D3D12Renderer::Present(FrameBuffer* fb)
     backBuffer->Copy(mPresentCommandList, fb);
     backBuffer->TransitionState(mPresentCommandList, D3D12_RESOURCE_STATE_PRESENT);
 
+    // Execute present command list.
     D3D12Tools::CloseCommandList(mPresentCommandList);
     D3D12Tools::ExecuteCommandLists(mPresentCommandQueue, mPresentCommandList);
+
+    // Wait for frame to complete.
     mPresentCommandQueue->Signal(mPresentCompleteFence, mFrameID + 1);
     D3D12Tools::WaitFence(mPresentCompleteFence, mFrameID + 1);
 

@@ -148,18 +148,14 @@ int main()
 
             if (gpuProfile)
             {
-                // Wait complete.
-                D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID);
-                D3D12Tools::WaitFence(graphicsCompleteFence, renderer.mFrameID);
-
                 // Resolve compute query data.
                 D3D12Tools::ResetCommandList(computeCommandAllocator, computeCommandList);
                 gpuComputeTimer.ResolveQuery(computeCommandList);
                 D3D12Tools::CloseCommandList(computeCommandList);
                 D3D12Tools::ExecuteCommandLists(computeCommandQueue, computeCommandList);
-                computeCommandQueue->Signal(queryComputeCompleteFence, renderer.mFrameID + 1);
 
                 // Fetch compute query data.
+                computeCommandQueue->Signal(queryComputeCompleteFence, renderer.mFrameID + 1);
                 D3D12Tools::WaitFence(queryComputeCompleteFence, renderer.mFrameID + 1);
                 gpuComputeTimer.CalculateTime();
 
@@ -168,9 +164,9 @@ int main()
                 gpuGraphicsTimer.ResolveQuery(graphicsCommandList);
                 D3D12Tools::CloseCommandList(graphicsCommandList);
                 D3D12Tools::ExecuteCommandLists(graphicsCommandQueue, graphicsCommandList);
-                graphicsCommandQueue->Signal(queryGraphicsCompleteFence, renderer.mFrameID + 1);
 
                 // Resolve graphics query data.
+                graphicsCommandQueue->Signal(queryGraphicsCompleteFence, renderer.mFrameID + 1);
                 D3D12Tools::WaitFence(queryGraphicsCompleteFence, renderer.mFrameID + 1);
                 gpuGraphicsTimer.CalculateTime();
 
@@ -192,9 +188,6 @@ int main()
     // --- MAIN LOOP --- //
 
     // +++ SHUTDOWN +++ //
-    D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID);
-    D3D12Tools::WaitFence(graphicsCompleteFence, renderer.mFrameID);
-
     queryComputeCompleteFence->Release();
     queryGraphicsCompleteFence->Release();
 

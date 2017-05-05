@@ -89,11 +89,10 @@ class D3D12Timer {
             UINT64 timeStamps[2];
             {
                 void* mappedResource;
-                CD3DX12_RANGE readRange(0, sizeof(UINT64) * mQueryCount);
-                CD3DX12_RANGE writeRange(0, 0);
-                ASSERT(mQueryResource->Map(0, &readRange, &mappedResource), S_OK);
+                //CD3DX12_RANGE readRange(0, sizeof(UINT64) * mQueryCount);
+                ASSERT(mQueryResource->Map(0, nullptr, &mappedResource), S_OK);
                 memcpy(&timeStamps, mappedResource, sizeof(UINT64) * mQueryCount);
-                mQueryResource->Unmap(0, &writeRange);
+                mQueryResource->Unmap(0, nullptr);
             }
 
             mBeginTime = timeStamps[0];

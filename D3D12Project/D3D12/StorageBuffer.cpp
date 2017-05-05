@@ -117,11 +117,9 @@ void StorageBuffer::Write(ID3D12GraphicsCommandList* pCommandList, void* data, u
     TransitionState(pCommandList, D3D12_RESOURCE_STATE_COPY_DEST);
 
     void* mappedResource;
-    CD3DX12_RANGE readRange(0, 0);
-    CD3DX12_RANGE writeRange(offset, offset + byteSize);
-    ASSERT(mStagingBuff->Map(0, &readRange, &mappedResource), S_OK);
+    ASSERT(mStagingBuff->Map(0, nullptr, &mappedResource), S_OK);
     memcpy(reinterpret_cast<unsigned char*>(mappedResource) + offset, data, byteSize);
-    mStagingBuff->Unmap(0, &writeRange);
+    mStagingBuff->Unmap(0, nullptr);
 
     pCommandList->CopyResource(mBuff, mStagingBuff);
 }
