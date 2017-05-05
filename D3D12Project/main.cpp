@@ -13,6 +13,8 @@
 #include "Camera/Camera.hpp"
 #include "Managers/InputManager.hpp"
 
+#define SKIP_TIME 5.f
+
 int main()
 {
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -92,6 +94,11 @@ int main()
     {
         float dt = 0.f;
         float totalTime = 0.f;
+        float skipTime = -SKIP_TIME;
+        std::cout << "+++ Skip time: " << SKIP_TIME << " seconds. (Wait for program to stabilize) +++" << std::endl;
+        std::cout << "Hold F1 to sync compute/graphics. " << std::endl;
+        std::cout << "Hold F2 to profile. " << std::endl;
+        std::cout << "Hold F3 to show average frame time. " << std::endl;
         unsigned int frameCount = 0;
         D3D12Timer gpuComputeTimer(pDevice);
         D3D12Timer gpuGraphicsTimer(pDevice);
@@ -143,44 +150,51 @@ int main()
                 // --- PRESENET --- //
             }
             // +++ PROFILING +++ //
-            ++frameCount;
-            totalTime += dt;
-
-            if (gpuProfile)
+            skipTime += dt;
+            if (skipTime > 0.f)
             {
-                // Resolve compute query data.
-                D3D12Tools::ResetCommandList(computeCommandAllocator, computeCommandList);
-                gpuComputeTimer.ResolveQuery(computeCommandList);
-                D3D12Tools::CloseCommandList(computeCommandList);
-                D3D12Tools::ExecuteCommandLists(computeCommandQueue, computeCommandList);
+                if (frameCount == 0)
+                    std::cout << "--- Skip time over --- " << std::endl << std::endl;
 
-                // Fetch compute query data.
-                computeCommandQueue->Signal(queryComputeCompleteFence, renderer.mFrameID + 1);
-                D3D12Tools::WaitFence(queryComputeCompleteFence, renderer.mFrameID + 1);
-                gpuComputeTimer.CalculateTime();
+                totalTime += dt;
+                ++frameCount;
 
-                // Resolve graphics query data.
-                D3D12Tools::ResetCommandList(graphicsCommandAllocator, graphicsCommandList);
-                gpuGraphicsTimer.ResolveQuery(graphicsCommandList);
-                D3D12Tools::CloseCommandList(graphicsCommandList);
-                D3D12Tools::ExecuteCommandLists(graphicsCommandQueue, graphicsCommandList);
+                if (gpuProfile)
+                {
+                    // Resolve compute query data.
+                    D3D12Tools::ResetCommandList(computeCommandAllocator, computeCommandList);
+                    gpuComputeTimer.ResolveQuery(computeCommandList);
+                    D3D12Tools::CloseCommandList(computeCommandList);
+                    D3D12Tools::ExecuteCommandLists(computeCommandQueue, computeCommandList);
 
-                // Resolve graphics query data.
-                graphicsCommandQueue->Signal(queryGraphicsCompleteFence, renderer.mFrameID + 1);
-                D3D12Tools::WaitFence(queryGraphicsCompleteFence, renderer.mFrameID + 1);
-                gpuGraphicsTimer.CalculateTime();
+                    // Fetch compute query data.
+                    computeCommandQueue->Signal(queryComputeCompleteFence, renderer.mFrameID + 1);
+                    D3D12Tools::WaitFence(queryComputeCompleteFence, renderer.mFrameID + 1);
+                    gpuComputeTimer.CalculateTime();
 
-                // Get timestamps.
-                float computeTime = 1.f / 1000000.f * gpuComputeTimer.GetDeltaTime();
-                float graphicsTime = 1.f / 1000000.f * gpuGraphicsTimer.GetDeltaTime();
-                std::cout << "GPU(Total) : " << computeTime + graphicsTime << " ms | GPU(Compute): " << computeTime << " ms | GPU(Graphics) : " << graphicsTime << " ms" << std::endl;
-                profiler.Rectangle(gpuComputeTimer.GetBeginTime(), 1, gpuComputeTimer.GetDeltaTime(), 1, 0.f, 0.f, 1.f);
-                profiler.Rectangle(gpuGraphicsTimer.GetBeginTime(), 0, gpuGraphicsTimer.GetDeltaTime(), 1, 0.f, 1.f, 0.f);
-                profiler.Point(gpuGraphicsTimer.GetBeginTime(), totalTime / frameCount * 1000000, syncComputeGraphics ? "'-ro'" : "'-bo'");
-            }
-            if (inputManager.KeyPressed(GLFW_KEY_F3))
-            {
-                std::cout << "CPU(Average delta time) : " << totalTime / frameCount * 1000.f << " ms" << std::endl;
+                    // Resolve graphics query data.
+                    D3D12Tools::ResetCommandList(graphicsCommandAllocator, graphicsCommandList);
+                    gpuGraphicsTimer.ResolveQuery(graphicsCommandList);
+                    D3D12Tools::CloseCommandList(graphicsCommandList);
+                    D3D12Tools::ExecuteCommandLists(graphicsCommandQueue, graphicsCommandList);
+
+                    // Resolve graphics query data.
+                    graphicsCommandQueue->Signal(queryGraphicsCompleteFence, renderer.mFrameID + 1);
+                    D3D12Tools::WaitFence(queryGraphicsCompleteFence, renderer.mFrameID + 1);
+                    gpuGraphicsTimer.CalculateTime();
+
+                    // Get timestamps.
+                    float computeTime = 1.f / 1000000.f * gpuComputeTimer.GetDeltaTime();
+                    float graphicsTime = 1.f / 1000000.f * gpuGraphicsTimer.GetDeltaTime();
+                    std::cout << "GPU(Total) : " << computeTime + graphicsTime << " ms | GPU(Compute): " << computeTime << " ms | GPU(Graphics) : " << graphicsTime << " ms" << std::endl;
+                    profiler.Rectangle(gpuComputeTimer.GetBeginTime(), 1, gpuComputeTimer.GetDeltaTime(), 1, 0.f, 0.f, 1.f);
+                    profiler.Rectangle(gpuGraphicsTimer.GetBeginTime(), 0, gpuGraphicsTimer.GetDeltaTime(), 1, 0.f, 1.f, 0.f);
+                    profiler.Point(gpuGraphicsTimer.GetBeginTime(), totalTime / frameCount * 1000000, syncComputeGraphics ? "'-ro'" : "'-bo'");
+                }
+                if (inputManager.KeyPressed(GLFW_KEY_F3))
+                {
+                    std::cout << "CPU(Average delta time) : " << totalTime / frameCount * 1000.f << " ms" << std::endl;
+                }
             }
             // --- PROFILING --- //
         }
