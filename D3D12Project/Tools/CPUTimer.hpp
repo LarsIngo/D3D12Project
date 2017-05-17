@@ -16,7 +16,7 @@ class CPUTimer {
         ~CPUTimer()
         {
             long long nanoTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - mStart;
-            *mDt = static_cast<float>(nanoTime) / 1000000000.f;
+            *mDt = static_cast<float>(nanoTime);
         }
 
     private:
