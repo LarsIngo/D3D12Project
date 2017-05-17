@@ -93,7 +93,7 @@ int main()
     // +++ MAIN LOOP +++ //
     {
         float dt = 0.f;
-        float totalTime = 0.f;
+        double totalTime = 0.f;
         float skipTime = -SKIP_TIME;
         std::cout << "+++ Skip time: " << SKIP_TIME << " seconds. (Wait for program to stabilize) +++" << std::endl;
         std::cout << "Hold F1 to sync compute/graphics. " << std::endl;
@@ -215,13 +215,13 @@ int main()
                 D3D12Tools::ExecuteCommandLists(graphicsCommandQueue, graphicsCommandList);
                 graphicsCommandQueue->Signal(graphicsCompleteFence, renderer.mFrameID + 1);
                 // --- RENDER --- //
+
+                // Wait on CPU for compute and graphics to complete.
+                D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID + 1);
+                D3D12Tools::WaitFence(graphicsCompleteFence, renderer.mFrameID + 1);
             }
 
             // +++ PRESENET +++ //
-            // Wait for frame to complete.
-            D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID + 1);
-            D3D12Tools::WaitFence(graphicsCompleteFence, renderer.mFrameID + 1);
-
             // Present frame.
             renderer.Present(camera.mpFrameBuffer);
             // --- PRESENET --- //
