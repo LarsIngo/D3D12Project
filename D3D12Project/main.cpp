@@ -215,16 +215,17 @@ int main()
                 D3D12Tools::ExecuteCommandLists(graphicsCommandQueue, graphicsCommandList);
                 graphicsCommandQueue->Signal(graphicsCompleteFence, renderer.mFrameID + 1);
                 // --- RENDER --- //
-
-                // +++ PRESENET +++ //
-                // Wait for frame to complete.
-                D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID + 1);
-                D3D12Tools::WaitFence(graphicsCompleteFence, renderer.mFrameID + 1);
-                
-                // Present frame.
-                renderer.Present(camera.mpFrameBuffer);
-                // --- PRESENET --- //
             }
+
+            // +++ PRESENET +++ //
+            // Wait for frame to complete.
+            D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID + 1);
+            D3D12Tools::WaitFence(graphicsCompleteFence, renderer.mFrameID + 1);
+
+            // Present frame.
+            renderer.Present(camera.mpFrameBuffer);
+            // --- PRESENET --- //
+
             // +++ PROFILING +++ //
             skipTime += dt;
             if (skipTime > 0.f)
