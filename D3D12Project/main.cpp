@@ -15,6 +15,8 @@
 
 #define SKIP_TIME_NANO 5000000000
 
+#define PROFILE_FRAME_COUNT 1000
+
 int main()
 {
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -98,6 +100,10 @@ int main()
         double totalMeasureTime = 0.0;
         float mt = 0.f;
         float dt = 0.f;
+        double profileFrames[PROFILE_FRAME_COUNT];
+        for (int i = 0; i < PROFILE_FRAME_COUNT; ++i)
+            profileFrames[i] = 0.0;
+        double averageTime = 0.0;
 
         std::cout << "+++ Skip time: " << SKIP_TIME_NANO << " nanoseconds. (Wait for program to stabilize) +++" << std::endl;
         std::cout << "Hold F1 to sync compute/graphics. " << std::endl;
@@ -275,9 +281,15 @@ int main()
                     profiler.Rectangle(gpuGraphicsTimer.GetBeginTime(), 0, gpuGraphicsTimer.GetDeltaTime(), 1, 0.f, 1.f, 0.f);
                     profiler.Point(gpuGraphicsTimer.GetBeginTime(), totalMeasureTime / frameCount, syncComputeGraphics ? "'-ro'" : "'-bo'");
                 }
+
+                // CALCULATE AVERAGE FRAME TIME OF LAST NUMBER OF FRAMES
+                averageTime -= profileFrames[frameCount % PROFILE_FRAME_COUNT];
+                profileFrames[frameCount % PROFILE_FRAME_COUNT] = mt;
+                averageTime += mt;
+
                 if (inputManager.KeyPressed(GLFW_KEY_F3))
                 {
-                    std::cout << "CPU(Average delta time) : " << totalMeasureTime / frameCount / 1000000.f << " ms" << std::endl;
+                    std::cout << "CPU(Average delta time of last " << PROFILE_FRAME_COUNT << " frames) : " << averageTime / PROFILE_FRAME_COUNT / 1000000 << " ms : FrameCount: " << frameCount << std::endl;
                 }
             }
             // --- PROFILING --- //
