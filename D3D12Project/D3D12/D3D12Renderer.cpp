@@ -49,7 +49,6 @@ void D3D12Renderer::Present(FrameBuffer* fb)
     FrameBuffer* backBuffer = mSwapChainFrameBufferList[mActiveSwapchainBufferIndex];
 
     // Wait for previous present to be complteted.
-    D3D12Tools::WaitFence(mPresentCompleteFence, mFrameID);
     D3D12Tools::ResetCommandList(mPresentCommandAllocator, mPresentCommandList);
 
     // Copy frame buffer to back buffer.
@@ -71,6 +70,7 @@ void D3D12Renderer::Present(FrameBuffer* fb)
 
     // Signal present is complete.
     mPresentCommandQueue->Signal(mPresentCompleteFence, mFrameID);
+    D3D12Tools::WaitFence(mPresentCompleteFence, mFrameID);
 }
 
 void D3D12Renderer::InitialiseGLFW()

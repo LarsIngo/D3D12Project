@@ -51,7 +51,7 @@ namespace D3D12Tools
         if (FAILED(hr))
         {
             OutputDebugStringA((char*)errorBuff->GetBufferPointer());
-            assert(0 && "Vertex shader compile error");
+            assert(0 && "Shader compile error");
         }
         shader.BytecodeLength = shaderBlob->GetBufferSize();
         shader.pShaderBytecode = shaderBlob->GetBufferPointer();

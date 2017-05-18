@@ -1,4 +1,4 @@
-#define ITER 50000
+#define ITER 50000.f
 
 // Input.
 struct PSInput
@@ -28,8 +28,9 @@ PSOutput main(PSInput input) : SV_TARGET
         float factor = max(1.f - r * 2.f, 0.f); //[1,0]
         float sinFactor = 1.f - sin(3.14159265f / 2.f * (factor + 1.f));
 
-        output.color += float4(input.color, sinFactor) / (float)ITER;
+        output.color += float4(input.color, sinFactor) / ITER;
     }
+
 
     return output;
 }

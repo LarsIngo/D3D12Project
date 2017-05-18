@@ -51,7 +51,6 @@ int main()
 
     FrameBuffer frameBuffer(pDevice, pDeviceHeapMemory, width, height, renderer.mBackBufferFormat);
     Camera camera(60.f, &frameBuffer);
-    camera.mPosition.z = -5.f;
 
     int lenX = 256;
     int lenY = 256;
@@ -66,7 +65,7 @@ int main()
         Particle particle;
         float spacing = 1.f;
         float speed = 0.1f;
-        particle.scale = glm::vec4(spacing / 2.f, spacing / 2.f, 0.f, 0.f);
+        particle.scale = glm::vec4(spacing * 0.75f, spacing * 0.75f, 0.f, 0.f);
         for (int y = 0; y < lenY; ++y)
         {
             for (int x = 0; x < lenX; ++x)
@@ -79,6 +78,10 @@ int main()
             }
         }
         scene.AddParticles(uploadCommandList, particleList);
+        
+        camera.mPosition.x = lenX / 2.f * spacing;
+        camera.mPosition.y = lenY / 2.f * spacing;
+        camera.mPosition.z = -50.f;
 
         D3D12Tools::CloseCommandList(uploadCommandList);
         D3D12Tools::ExecuteCommandLists(uploadCommandQueue, uploadCommandList);
@@ -196,7 +199,7 @@ int main()
             {
                 double lastTime = currentTime;
                 currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-                dt = currentTime - lastTime;
+                dt = (currentTime - lastTime) / 1000000000;
                 totalTime = currentTime - startTime;
 
                 CPUTIMER(mt);
