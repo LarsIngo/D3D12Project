@@ -12,6 +12,7 @@
 #include "Scene/Scene.hpp"
 #include "Camera/Camera.hpp"
 #include "Managers/InputManager.hpp"
+#include "D3D12/StorageSwapBuffer.hpp"
 
 #define SKIP_TIME_NANO 5000000000
 
@@ -202,6 +203,27 @@ int main()
                 dt = (currentTime - lastTime) / 1000000000;
                 totalTime = currentTime - startTime;
 
+                ID3D12CommandQueue* uploadCommandQueue = D3D12Tools::CreateCommandQueue(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
+                ID3D12CommandAllocator* uploadCommandAllocator = D3D12Tools::CreateCommandAllocator(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
+                ID3D12GraphicsCommandList* uploadCommandList = D3D12Tools::CreateCommandList(pDevice, uploadCommandAllocator, D3D12_COMMAND_LIST_TYPE_DIRECT);
+                ID3D12Fence* uploadFence = D3D12Tools::CreateFence(pDevice);
+
+                scene.mParticleUpdateBuffer->GetInputBuffer()->TransitionState(uploadCommandList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+                scene.mParticleRenderBuffer->TransitionState(uploadCommandList, D3D12_RESOURCE_STATE_COPY_DEST);
+                scene.mParticleRenderBuffer->Copy(uploadCommandList, scene.mParticleUpdateBuffer->GetInputBuffer());
+                scene.mParticleUpdateBuffer->GetInputBuffer()->TransitionState(uploadCommandList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+                scene.mParticleRenderBuffer->TransitionState(uploadCommandList, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
+                D3D12Tools::CloseCommandList(uploadCommandList);
+                D3D12Tools::ExecuteCommandLists(uploadCommandQueue, uploadCommandList);
+                uploadCommandQueue->Signal(uploadFence, 1);
+                D3D12Tools::WaitFence(uploadFence, 1);
+
+                uploadCommandQueue->Release();
+                uploadCommandAllocator->Release();
+                uploadFence->Release();
+                uploadCommandList->Release();
+
                 CPUTIMER(mt);
                 // +++ UPDATE +++ //
                 //D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID);
@@ -215,6 +237,7 @@ int main()
                 D3D12Tools::CloseCommandList(computeCommandList);
                 D3D12Tools::ExecuteCommandLists(computeCommandQueue, computeCommandList);
                 computeCommandQueue->Signal(computeCompleteFence, renderer.mFrameID + 1);
+
                 //SYNC_COMPUTE_GRAPHICS
                 if (syncComputeGraphics) D3D12Tools::WaitFence(computeCompleteFence, renderer.mFrameID + 1);
                 // --- UPDATE --- //

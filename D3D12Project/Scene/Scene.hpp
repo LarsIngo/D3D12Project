@@ -4,6 +4,7 @@
 #include "../Particle/Particle.hpp"
 #include <d3d12.h>
 
+class StorageBuffer;
 class StorageSwapBuffer;
 class ParticleRenderSystem;
 class ParticleUpdateSystem;
@@ -25,8 +26,10 @@ class Scene
         // particleList Vector of particles to add.
         void AddParticles(ID3D12GraphicsCommandList* pCommandList, std::vector<Particle>& particleList);
 
+        StorageSwapBuffer* mParticleUpdateBuffer;
+        StorageBuffer* mParticleRenderBuffer;
+
     private:
         unsigned int mMaxParticleCount;
         unsigned int mParticleCount;
-        StorageSwapBuffer* mParticleBuffer;
 };

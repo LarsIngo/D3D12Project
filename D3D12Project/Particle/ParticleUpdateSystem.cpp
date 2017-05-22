@@ -77,15 +77,15 @@ void ParticleUpdateSystem::Update(ID3D12GraphicsCommandList* pCommandList, Scene
     pCommandList->SetDescriptorHeaps(_countof(ppDescriptorHeaps), ppDescriptorHeaps);
 
     pCommandList->SetPipelineState(mPipeline);
-    assert(scene->mParticleBuffer->GetInputBuffer()->mState == D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    pCommandList->SetComputeRootShaderResourceView(0, scene->mParticleBuffer->GetInputBuffer()->mBuff->GetGPUVirtualAddress());
+    assert(scene->mParticleUpdateBuffer->GetInputBuffer()->mState == D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    pCommandList->SetComputeRootShaderResourceView(0, scene->mParticleUpdateBuffer->GetInputBuffer()->mBuff->GetGPUVirtualAddress());
     pCommandList->SetComputeRootShaderResourceView(1, mMetaBuffer->mBuff->GetGPUVirtualAddress());
-    assert(scene->mParticleBuffer->GetOutputBuffer()->mState == D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-    pCommandList->SetComputeRootUnorderedAccessView(2, scene->mParticleBuffer->GetOutputBuffer()->mBuff->GetGPUVirtualAddress());
+    assert(scene->mParticleUpdateBuffer->GetOutputBuffer()->mState == D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    pCommandList->SetComputeRootUnorderedAccessView(2, scene->mParticleUpdateBuffer->GetOutputBuffer()->mBuff->GetGPUVirtualAddress());
 
-    pCommandList->Dispatch(static_cast<unsigned int>(ceil(scene->mParticleCount / 128.f)), 1, 1);
+    pCommandList->Dispatch((scene->mParticleCount), 1, 1);
 
     {   // CREATE DEPENDENCY TO MEASURE EXECUTION TIME OF DISPATCH CALL //https://www.gamedev.net/topic/646113-compute-shader-execution-time/
-        pCommandList->CopyBufferRegion(scene->mParticleBuffer->GetOutputBuffer()->mBuff, 0, scene->mParticleBuffer->GetInputBuffer()->mBuff, 0, sizeof(Particle));
+        pCommandList->CopyBufferRegion(scene->mParticleUpdateBuffer->GetOutputBuffer()->mBuff, 0, scene->mParticleUpdateBuffer->GetInputBuffer()->mBuff, 0, sizeof(Particle));
     }
 }
