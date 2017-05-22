@@ -52,8 +52,8 @@ int main()
     FrameBuffer frameBuffer(pDevice, pDeviceHeapMemory, width, height, renderer.mBackBufferFormat);
     Camera camera(60.f, &frameBuffer);
 
-    int lenX = 256;
-    int lenY = 256;
+    int lenX = 1;
+    int lenY = 1;
     Scene scene(pDevice, pDeviceHeapMemory, lenX * lenY);
     {
         ID3D12CommandQueue* uploadCommandQueue = D3D12Tools::CreateCommandQueue(pDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
@@ -79,8 +79,8 @@ int main()
         }
         scene.AddParticles(uploadCommandList, particleList);
         
-        camera.mPosition.x = lenX / 2.f * spacing;
-        camera.mPosition.y = lenY / 2.f * spacing;
+        camera.mPosition.x = (lenX - 1) / 2.f * spacing;
+        camera.mPosition.y = (lenY - 1) / 2.f * spacing;
         camera.mPosition.z = -50.f;
 
         D3D12Tools::CloseCommandList(uploadCommandList);

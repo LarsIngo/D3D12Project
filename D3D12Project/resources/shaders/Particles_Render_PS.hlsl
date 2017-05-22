@@ -1,4 +1,4 @@
-#define ITER 50000.f
+#define ITER 10000000.f
 
 // Input.
 struct PSInput

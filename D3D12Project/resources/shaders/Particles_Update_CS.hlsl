@@ -1,4 +1,4 @@
-#define ITER 1500000.f
+#define ITER 12500000.f
 
 // Particle.
 struct Particle
@@ -46,21 +46,6 @@ void main(uint3 threadID : SV_DispatchThreadID)
 
             self.color += float4(sinFactorX, sinFactorY, sinFactorZ, 1.f) / ITER;
         }
-
-        //uint intersectCount = 0;
-        //for (uint pID = 0; pID < particleCount; ++pID)
-        //{
-        //    if (tID != pID)
-        //    {
-        //        Particle other = g_InputParticles[pID];
-        //        if (length(other.position - self.position) < 1.f)
-        //        {
-        //            ++intersectCount;
-        //        }                
-        //    }
-        //}
-        //self.color = float4(intersectCount / 10.f, 1.f, 0.f, 0.f);
-        
         g_OutputParticles[tID] = self;
     }
 }
