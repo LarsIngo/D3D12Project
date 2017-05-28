@@ -1,4 +1,4 @@
-#define ITER 12500000.f
+#define ITER 2000000.f
 
 // Particle.
 struct Particle
